@@ -70,7 +70,7 @@ pub(crate) fn connect_server(config: &mut crate::model::Config) {
                 if s.name == server.name {
                     s.current = Some(true);
                 } else {
-                    s.current = Some(false);
+                    s.current = None;
                 }
             }
             save_config(config);
