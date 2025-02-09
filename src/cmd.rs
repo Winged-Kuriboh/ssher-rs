@@ -1,6 +1,6 @@
 use crate::{
     colord_print::{green, red},
-    prompt::{confirm_prompt, rename_server_prompt, yesno_select_prompt},
+    prompt::{rename_server_prompt, yesno_select_prompt},
     save_config, server_form_prompt, servers_select_prompt,
 };
 use base64::{engine::general_purpose, Engine};
@@ -15,7 +15,7 @@ use termion::{async_stdin, raw::IntoRawMode};
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::AsyncResolver;
 
-const VERSION: &str = "0.1.0";
+const VERSION: &str = "0.2.0";
 
 pub(crate) fn version() {
     green(format!("😸 Version: v{}", VERSION).as_str());
