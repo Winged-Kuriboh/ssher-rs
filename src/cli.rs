@@ -5,7 +5,7 @@ use crate::{
     },
     colord_print::red,
 };
-use clap::{Command, CommandFactory, Parser, Subcommand};
+use clap::{Args, Command, CommandFactory, Parser, Subcommand};
 use clap_complete::{generate, Generator, Shell};
 use std::io;
 
@@ -29,16 +29,26 @@ enum SubCommands {
     #[command(name = "list", about = "List all servers", alias = "ls")]
     List,
     #[command(name = "edit", about = "Edit a server")]
-    Edit,
-    #[command(name = "remove", about = "Remove a server", alias = "rm")]
-    Remove,
+    Edit(ServerArgs),
+    #[command(name = "remove", about = "Remove a server or servers", alias = "rm")]
+    Remove(ServersArgs),
     #[command(name = "rename", about = "Rename a server")]
-    Rename,
+    Rename(ServerArgs),
     #[command(name = "completion", about = "Generate shell completion script")]
     Completion {
         #[command(subcommand)]
         command: Option<CompletionSubCommands>,
     },
+}
+
+#[derive(Debug, Args)]
+struct ServerArgs {
+    name: Option<String>,
+}
+
+#[derive(Debug, Args)]
+struct ServersArgs {
+    names: Vec<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -82,14 +92,22 @@ impl Cli {
             Some(SubCommands::List) => {
                 list_servers();
             }
-            Some(SubCommands::Edit) => {
-                edit_server();
+            Some(SubCommands::Edit(server)) => {
+                let server = match server.name.clone() {
+                    Some(server) => server,
+                    None => String::new(),
+                };
+                edit_server(server);
             }
-            Some(SubCommands::Remove) => {
-                remove_server();
+            Some(SubCommands::Remove(servers)) => {
+                remove_server(servers.names.clone());
             }
-            Some(SubCommands::Rename) => {
-                rename_server();
+            Some(SubCommands::Rename(server)) => {
+                let server = match server.name.clone() {
+                    Some(server) => server,
+                    None => String::new(),
+                };
+                rename_server(server);
             }
             None => connect_server(),
         }

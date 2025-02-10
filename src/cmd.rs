@@ -1,7 +1,6 @@
 use crate::{
-    colord_print::{green, red},
-    config::load_config,
-    config::save_config,
+    colord_print::{green, red, yellow},
+    config::{load_config, save_config},
     prompt::{
         add_server_form_prompt, edit_server_form_prompt, rename_server_prompt,
         servers_select_prompt, yesno_select_prompt,
@@ -13,6 +12,7 @@ use std::{
     io::{self, Read, Write},
     net::TcpStream,
     path::Path,
+    vec,
 };
 use tabled::{settings::Style, Table};
 use termion::{async_stdin, raw::IntoRawMode};
@@ -29,7 +29,7 @@ pub(crate) fn list_servers() {
     let config = load_config();
 
     if config.servers.is_empty() {
-        println!("😿 No servers found");
+        yellow("😿 No servers found");
     } else {
         let table = Table::new(&config.servers)
             .with(Style::modern_rounded())
@@ -39,22 +39,50 @@ pub(crate) fn list_servers() {
     }
 }
 
-pub(crate) fn remove_server() {
+pub(crate) fn remove_server(servers: Vec<String>) {
     let mut config = load_config();
 
-    if let Some(server) = servers_select_prompt(&config.servers) {
-        if yesno_select_prompt("Are you sure you want to remove this server?") {
+    let servers = if servers.is_empty() {
+        match servers_select_prompt(&config.servers) {
+            Some(s) => vec![s.name],
+            None => return,
+        }
+    } else {
+        let mut servers_removed = vec![];
+        for name in servers.clone() {
+            if config.servers.iter().find(|s| s.name == name).is_none() {
+                yellow(format!("😿 No server <{}> found", &name).as_str());
+            } else {
+                servers_removed.push(name);
+            }
+        }
+        servers_removed
+    };
+
+    if servers.is_empty() {
+        return;
+    }
+
+    let label = if servers.len() > 1 {
+        "Are you sure you want to remove these servers?"
+    } else {
+        "Are you sure you want to remove this server?"
+    };
+
+    if yesno_select_prompt(label) {
+        let mut server_removed = vec![];
+        for server in servers {
             let index = config
                 .servers
                 .iter()
-                .position(|s| s.name == server.name)
+                .position(|s| s.name == server)
                 .unwrap();
 
             config.servers.remove(index);
-            save_config(&config);
-
-            green(format!("😺 Server {} removed.", server.name).as_str());
+            server_removed.push(server);
         }
+        save_config(&config);
+        green(format!("😺 Server {} removed.", server_removed.join(", ")).as_str());
     }
 }
 
@@ -71,39 +99,57 @@ pub(crate) fn add_server() {
     }
 }
 
-pub(crate) fn edit_server() {
+pub(crate) fn edit_server(server: String) {
     let mut config = load_config();
 
-    if let Some(server) = servers_select_prompt(&config.servers) {
-        if let Some(new_server) = edit_server_form_prompt(&config, &server) {
-            let index = config
-                .servers
-                .iter()
-                .position(|s| s.name == server.name)
-                .unwrap();
-
-            config.servers[index] = new_server;
-            save_config(&config);
-            green(format!("😺 Server {} updated.", server.name).as_str());
+    let server = match config.servers.iter().find(|s| s.name == server) {
+        Some(s) => s.clone(),
+        None => {
+            if let Some(s) = servers_select_prompt(&config.servers) {
+                s
+            } else {
+                return;
+            }
         }
+    };
+
+    if let Some(new_server) = edit_server_form_prompt(&config, &server) {
+        let index = config
+            .servers
+            .iter()
+            .position(|s| s.name == server.name)
+            .unwrap();
+
+        config.servers[index] = new_server;
+        save_config(&config);
+        green(format!("😺 Server {} updated.", server.name).as_str());
     }
 }
 
-pub(crate) fn rename_server() {
+pub(crate) fn rename_server(server: String) {
     let mut config = load_config();
 
-    if let Some(server) = servers_select_prompt(&config.servers) {
-        let new_name = rename_server_prompt(&config, &server);
-        if server.name != new_name {
-            for s in &mut config.servers {
-                if s.name == server.name {
-                    s.name = new_name.clone();
-                }
+    let server = match config.servers.iter().find(|s| s.name == server) {
+        Some(s) => s.clone(),
+        None => {
+            if let Some(s) = servers_select_prompt(&config.servers) {
+                s
+            } else {
+                return;
             }
-            save_config(&config);
-
-            green(format!("😺 Server {} renamed to {}.", server.name, new_name).as_str());
         }
+    };
+
+    let new_name = rename_server_prompt(&config, &server);
+    if server.name != new_name {
+        for s in &mut config.servers {
+            if s.name == server.name {
+                s.name = new_name.clone();
+            }
+        }
+        save_config(&config);
+
+        green(format!("😺 Server {} renamed to {}.", server.name, new_name).as_str());
     }
 }
 
