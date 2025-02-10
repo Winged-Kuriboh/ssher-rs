@@ -12,8 +12,6 @@ use std::io;
 #[derive(Debug, Parser)]
 #[command(name= "ssher", about = "ssher is an easy-to-use command line tool for connecting to remote servers.", long_about = None)]
 pub(crate) struct Cli {
-    // #[arg(long = "generate", value_enum)]
-    // generator: Option<Shell>,
     #[command(subcommand)]
     command: Option<SubCommands>,
 }
