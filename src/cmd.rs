@@ -1,7 +1,10 @@
 use crate::{
     colord_print::{green, red},
-    prompt::{rename_server_prompt, yesno_select_prompt},
-    save_config, server_form_prompt, servers_select_prompt,
+    prompt::{
+        add_server_form_prompt, edit_server_form_prompt, rename_server_prompt,
+        servers_select_prompt, yesno_select_prompt,
+    },
+    save_config,
 };
 use base64::{engine::general_purpose, Engine};
 use ssh2::Session;
@@ -51,13 +54,45 @@ pub(crate) fn remove_server(config: &mut crate::model::Config) {
 }
 
 pub(crate) fn add_server(config: &mut crate::model::Config) {
-    if let Some(server) = server_form_prompt(config) {
+    if let Some(server) = add_server_form_prompt(config) {
         let server_name = server.name.clone();
 
         config.servers.push(server);
         save_config(config);
 
         green(format!("😺 Server {} added.", server_name).as_str());
+    }
+}
+
+pub(crate) fn edit_server(config: &mut crate::model::Config) {
+    if let Some(server) = servers_select_prompt(&config.servers) {
+        if let Some(new_server) = edit_server_form_prompt(config, &server) {
+            let index = config
+                .servers
+                .iter()
+                .position(|s| s.name == server.name)
+                .unwrap();
+
+            config.servers[index] = new_server;
+            save_config(config);
+            green(format!("😺 Server {} updated.", server.name).as_str());
+        }
+    }
+}
+
+pub(crate) fn rename_server(config: &mut crate::model::Config) {
+    if let Some(server) = servers_select_prompt(&config.servers) {
+        let new_name = rename_server_prompt(config, &server);
+        if server.name != new_name {
+            for s in &mut config.servers {
+                if s.name == server.name {
+                    s.name = new_name.clone();
+                }
+            }
+            save_config(config);
+
+            green(format!("😺 Server {} renamed to {}.", server.name, new_name).as_str());
+        }
     }
 }
 
@@ -150,22 +185,6 @@ pub(crate) fn connect_server(config: &mut crate::model::Config) {
             channel.wait_close().unwrap();
         } else {
             red("😿 Authentication failed.");
-        }
-    }
-}
-
-pub(crate) fn rename_server(config: &mut crate::model::Config) {
-    if let Some(server) = servers_select_prompt(&config.servers) {
-        let new_name = rename_server_prompt(config, &server);
-        if server.name != new_name {
-            for s in &mut config.servers {
-                if s.name == server.name {
-                    s.name = new_name.clone();
-                }
-            }
-            save_config(config);
-
-            green(format!("😺 Server {} renamed to {}.", server.name, new_name).as_str());
         }
     }
 }

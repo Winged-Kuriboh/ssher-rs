@@ -23,14 +23,14 @@ pub(crate) struct Server {
 
 pub(crate) fn display_password(value: &Option<String>) -> String {
     match value {
-        Some(_) => "***".to_string(),
+        Some(_) => "******".to_string(),
         _ => "".to_string(),
     }
 }
 
 pub(crate) fn display_option_bool(value: &Option<bool>) -> String {
     match value {
-        Some(true) => "✦".to_string(),
+        Some(true) => "✲".to_string(),
         _ => " ".to_string(),
     }
 }

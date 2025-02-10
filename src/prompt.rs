@@ -13,8 +13,8 @@ use dialoguer::{
 pub(crate) fn default_theme() -> ColorfulTheme {
     ColorfulTheme {
         defaults_style: Style::new().for_stderr().cyan(),
-        prompt_style: Style::new().for_stderr().bold(),
-        prompt_prefix: style("🐱".to_string()).for_stderr().yellow(),
+        prompt_style: Style::new().for_stderr().bold().yellow(),
+        prompt_prefix: style("❖".to_string()).for_stderr().yellow(),
         prompt_suffix: style("".to_string()).blue(),
         success_prefix: style("✔".to_string()).for_stderr().cyan(),
         success_suffix: style("".to_string()).for_stderr().black().bright(),
@@ -24,24 +24,38 @@ pub(crate) fn default_theme() -> ColorfulTheme {
         values_style: Style::new().for_stderr().cyan(),
         active_item_style: Style::new().for_stderr().cyan().underlined(),
         inactive_item_style: Style::new().for_stderr(),
-        active_item_prefix: style("➤".to_string()).for_stderr().cyan(),
+        active_item_prefix: style("→".to_string()).for_stderr().cyan(),
         inactive_item_prefix: style(" ".to_string()).for_stderr(),
         checked_item_prefix: style("✔".to_string()).for_stderr().cyan(),
         unchecked_item_prefix: style("⬚".to_string()).for_stderr().magenta(),
-        picked_item_prefix: style("➤".to_string()).for_stderr().cyan(),
+        picked_item_prefix: style("→".to_string()).for_stderr().cyan(),
         unpicked_item_prefix: style(" ".to_string()).for_stderr(),
     }
 }
 
 pub(crate) fn servers_select_prompt(server: &[Server]) -> Option<Server> {
+    let max_name_width = server.iter().map(|s| s.name.len()).max().unwrap_or(0);
     let mut selections: Vec<String> = server
         .iter()
-        // .map(|s| format!("{}@{}:{}", s.user, s.host, s.port))
         .map(|s| {
             if let Some(true) = s.current {
-                format!("✦ {}", s.name)
+                format!(
+                    "✲ {:<width$}\t({}@{}:{})",
+                    s.name,
+                    s.user,
+                    s.host,
+                    s.port,
+                    width = max_name_width
+                )
             } else {
-                format!("  {}", s.name)
+                format!(
+                    "  {:<width$}\t({}@{}:{})",
+                    s.name,
+                    s.user,
+                    s.host,
+                    s.port,
+                    width = max_name_width
+                )
             }
         })
         .collect();
@@ -63,11 +77,13 @@ pub(crate) fn servers_select_prompt(server: &[Server]) -> Option<Server> {
     Some(server[selection].clone())
 }
 
-pub(crate) fn server_form_prompt(config: &Config) -> Option<Server> {
+fn server_form_prompt(server: &Server, config: &Config) -> Option<Server> {
     let name: String = Input::with_theme(&default_theme())
         .with_prompt("Name(*):")
+        .with_initial_text(server.name.clone())
+        .show_default(false)
         .validate_with(|input: &String| {
-            if config.servers.iter().any(|s| s.name == *input) {
+            if *input != server.name && config.servers.iter().any(|s| s.name == *input) {
                 Err(format!("😾 Name {} already exists.", input))
             } else {
                 Ok(())
@@ -79,14 +95,14 @@ pub(crate) fn server_form_prompt(config: &Config) -> Option<Server> {
 
     let host: String = Input::with_theme(&default_theme())
         .with_prompt("Host(*):")
+        .with_initial_text(server.host.clone())
         .allow_empty(false)
         .interact_text()
         .unwrap();
 
     let port: u16 = Input::with_theme(&default_theme())
         .with_prompt("Port(*):")
-        .default(22)
-        .with_initial_text("22")
+        .with_initial_text(server.port.to_string())
         .show_default(false)
         .allow_empty(false)
         .interact_text()
@@ -95,7 +111,7 @@ pub(crate) fn server_form_prompt(config: &Config) -> Option<Server> {
     let user: String = Input::with_theme(&default_theme())
         .with_prompt("User(*):")
         .default("root".to_string())
-        .with_initial_text("root")
+        .with_initial_text(server.user.clone())
         .show_default(false)
         .allow_empty(false)
         .interact_text()
@@ -109,7 +125,12 @@ pub(crate) fn server_form_prompt(config: &Config) -> Option<Server> {
 
     let identity_file: String = Input::with_theme(&default_theme())
         .with_prompt("IdentityFile:")
-        .with_initial_text("~/.ssh/id_rsa")
+        .with_initial_text(
+            server
+                .identity_file
+                .clone()
+                .unwrap_or(String::from("~/.ssh/id_rsa")),
+        )
         .allow_empty(true)
         .interact_text()
         .unwrap();
@@ -132,6 +153,24 @@ pub(crate) fn server_form_prompt(config: &Config) -> Option<Server> {
         },
         current: None,
     })
+}
+
+pub(crate) fn add_server_form_prompt(config: &Config) -> Option<Server> {
+    let default_server = Server {
+        name: "".to_string(),
+        host: "".to_string(),
+        port: 22,
+        user: "root".to_string(),
+        password: None,
+        identity_file: Some(String::from("~/.ssh/id_rsa")),
+        current: None,
+    };
+
+    server_form_prompt(&default_server, config)
+}
+
+pub(crate) fn edit_server_form_prompt(config: &Config, server: &Server) -> Option<Server> {
+    server_form_prompt(server, config)
 }
 
 pub(crate) fn confirm_prompt(prompt: &str) -> bool {
