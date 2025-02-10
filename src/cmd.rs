@@ -1,10 +1,11 @@
 use crate::{
     colord_print::{green, red},
+    config::load_config,
+    config::save_config,
     prompt::{
         add_server_form_prompt, edit_server_form_prompt, rename_server_prompt,
         servers_select_prompt, yesno_select_prompt,
     },
-    save_config,
 };
 use base64::{engine::general_purpose, Engine};
 use ssh2::Session;
@@ -24,7 +25,9 @@ pub(crate) fn version() {
     green(format!("😸 Version: v{}", VERSION).as_str());
 }
 
-pub(crate) fn list_servers(config: &crate::model::Config) {
+pub(crate) fn list_servers() {
+    let config = load_config();
+
     if config.servers.is_empty() {
         println!("😿 No servers found");
     } else {
@@ -36,7 +39,9 @@ pub(crate) fn list_servers(config: &crate::model::Config) {
     }
 }
 
-pub(crate) fn remove_server(config: &mut crate::model::Config) {
+pub(crate) fn remove_server() {
+    let mut config = load_config();
+
     if let Some(server) = servers_select_prompt(&config.servers) {
         if yesno_select_prompt("Are you sure you want to remove this server?") {
             let index = config
@@ -46,27 +51,31 @@ pub(crate) fn remove_server(config: &mut crate::model::Config) {
                 .unwrap();
 
             config.servers.remove(index);
-            save_config(config);
+            save_config(&config);
 
             green(format!("😺 Server {} removed.", server.name).as_str());
         }
     }
 }
 
-pub(crate) fn add_server(config: &mut crate::model::Config) {
-    if let Some(server) = add_server_form_prompt(config) {
+pub(crate) fn add_server() {
+    let mut config = load_config();
+
+    if let Some(server) = add_server_form_prompt(&config) {
         let server_name = server.name.clone();
 
         config.servers.push(server);
-        save_config(config);
+        save_config(&config);
 
         green(format!("😺 Server {} added.", server_name).as_str());
     }
 }
 
-pub(crate) fn edit_server(config: &mut crate::model::Config) {
+pub(crate) fn edit_server() {
+    let mut config = load_config();
+
     if let Some(server) = servers_select_prompt(&config.servers) {
-        if let Some(new_server) = edit_server_form_prompt(config, &server) {
+        if let Some(new_server) = edit_server_form_prompt(&config, &server) {
             let index = config
                 .servers
                 .iter()
@@ -74,29 +83,33 @@ pub(crate) fn edit_server(config: &mut crate::model::Config) {
                 .unwrap();
 
             config.servers[index] = new_server;
-            save_config(config);
+            save_config(&config);
             green(format!("😺 Server {} updated.", server.name).as_str());
         }
     }
 }
 
-pub(crate) fn rename_server(config: &mut crate::model::Config) {
+pub(crate) fn rename_server() {
+    let mut config = load_config();
+
     if let Some(server) = servers_select_prompt(&config.servers) {
-        let new_name = rename_server_prompt(config, &server);
+        let new_name = rename_server_prompt(&config, &server);
         if server.name != new_name {
             for s in &mut config.servers {
                 if s.name == server.name {
                     s.name = new_name.clone();
                 }
             }
-            save_config(config);
+            save_config(&config);
 
             green(format!("😺 Server {} renamed to {}.", server.name, new_name).as_str());
         }
     }
 }
 
-pub(crate) fn connect_server(config: &mut crate::model::Config) {
+pub(crate) fn connect_server() {
+    let mut config = load_config();
+
     if let Some(server) = servers_select_prompt(&config.servers) {
         // If the server is not marked as current, mark it as current,
         // and unmark all others.
@@ -108,7 +121,7 @@ pub(crate) fn connect_server(config: &mut crate::model::Config) {
                     s.current = None;
                 }
             }
-            save_config(config);
+            save_config(&config);
         }
 
         let host = if server.host.parse::<std::net::IpAddr>().is_ok() {
@@ -170,13 +183,12 @@ pub(crate) fn connect_server(config: &mut crate::model::Config) {
                 if bytes_available > 0 {
                     let mut buffer = vec![0; bytes_available as usize];
                     channel.read_exact(&mut buffer).unwrap();
-                    stdout.write(&buffer).unwrap();
+                    stdout.write_all(&buffer).unwrap();
                     stdout.flush().unwrap();
                 }
-
-                // Using async_stdin to avoid blocking, should this also respect the WriteWindow?
                 stdin.read_to_end(&mut buff_in).unwrap();
-                channel.write(&buff_in).unwrap();
+                #[allow(clippy::unused_io_amount)]
+                channel.write_all(&buff_in).unwrap();
                 buff_in.clear();
 
                 // Unsure of best practice, but this feels responsive and avoids pegging the CPU

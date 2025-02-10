@@ -14,6 +14,7 @@ keywords = ["ssher"]
 [dependencies]
 base64 = "0.22.1"
 clap = { version = "4.5.28", features = ["derive"] }
+clap_complete = "4.5.44"
 console = "0.15.10"
 dialoguer = "0.11.0"
 serde = { version = "1.0.217", features = ["derive"] }
