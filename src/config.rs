@@ -1,6 +1,5 @@
-use std::{fs, path::Path};
-
 use crate::model::Config;
+use std::{fs, path::Path};
 
 const CONFIG_PATH: &str = "~/.ssher.yaml";
 
