@@ -16,6 +16,7 @@ cargo install ssher
 
 ```bash
 ssher
+ssher -s <server>
 ```
 
 2. Add a server
