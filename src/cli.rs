@@ -1,40 +1,75 @@
+#![allow(dead_code)]
 use crate::{
     cmd::{
         add_server, connect_server, edit_server, list_servers, remove_server, rename_server,
         version,
     },
     colord_print::red,
+    command::{print_completions, server_completer, server_possible_values},
 };
-use clap::{Args, Command, CommandFactory, Parser, Subcommand};
-use clap_complete::{generate, Generator, Shell};
-use std::io;
+use clap::{Args, CommandFactory, Parser, Subcommand, ValueHint};
+use clap_complete::{ArgValueCompleter, CompleteEnv, Shell};
 
 #[derive(Debug, Parser)]
-#[command(name= "ssher", about = "ssher is an easy-to-use command line tool for connecting to remote servers.", long_about = None)]
+#[command(
+    name = "ssher",
+    about = "ssher is an easy-to-use command line tool for connecting to remote servers.",
+    args_conflicts_with_subcommands = true
+)]
 pub(crate) struct Cli {
     #[command(subcommand)]
     command: Option<SubCommands>,
-}
 
-fn print_completions<G: Generator>(gen: G, cmd: &mut Command) {
-    generate(gen, cmd, cmd.get_name().to_string(), &mut io::stdout());
+    #[arg(short, long, help = "Server name")]
+    #[arg(add = ArgValueCompleter::new(server_completer), value_parser = server_possible_values(), num_args = 1)]
+    server: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
 enum SubCommands {
-    #[command(name = "version", about = "Show version", alias = "v")]
+    #[command(
+        name = "version",
+        about = "Show version",
+        alias = "v",
+        disable_help_flag = true
+    )]
     Version,
     #[command(name = "add", about = "Add a new server")]
     Add,
-    #[command(name = "list", about = "List all servers", alias = "ls")]
+    #[command(
+        name = "list",
+        about = "List all servers",
+        alias = "ls",
+        disable_help_flag = true
+    )]
     List,
-    #[command(name = "edit", about = "Edit a server")]
+    #[command(
+        name = "edit",
+        about = "Edit a server",
+        allow_missing_positional = true,
+        disable_help_flag = true
+    )]
     Edit(ServerArgs),
-    #[command(name = "remove", about = "Remove a server or servers", alias = "rm")]
+    #[command(
+        name = "remove",
+        about = "Remove a server or servers",
+        alias = "rm",
+        allow_missing_positional = true,
+        disable_help_flag = true
+    )]
     Remove(ServersArgs),
-    #[command(name = "rename", about = "Rename a server")]
+    #[command(
+        name = "rename",
+        about = "Rename a server",
+        allow_missing_positional = true,
+        disable_help_flag = true
+    )]
     Rename(ServerArgs),
-    #[command(name = "completion", about = "Generate shell completion script")]
+    #[command(
+        name = "completion",
+        about = "Generate shell completion script",
+        disable_help_flag = true
+    )]
     Completion {
         #[command(subcommand)]
         command: Option<CompletionSubCommands>,
@@ -43,11 +78,13 @@ enum SubCommands {
 
 #[derive(Debug, Args)]
 struct ServerArgs {
+    #[arg(value_hint = ValueHint::Other, add = ArgValueCompleter::new(server_completer), value_parser = server_possible_values(), num_args = ..=1)]
     name: Option<String>,
 }
 
 #[derive(Debug, Args)]
 struct ServersArgs {
+    #[arg(value_hint = ValueHint::Other, add = ArgValueCompleter::new(server_completer), value_parser = server_possible_values(), num_args = ..=server_possible_values().len())]
     names: Vec<String>,
 }
 
@@ -65,6 +102,7 @@ enum CompletionSubCommands {
 
 impl Cli {
     pub(crate) fn new() -> Self {
+        CompleteEnv::with_factory(Self::command).complete();
         Self::parse()
     }
 
@@ -93,23 +131,20 @@ impl Cli {
                 list_servers();
             }
             Some(SubCommands::Edit(server)) => {
-                let server = match server.name.clone() {
-                    Some(server) => server,
-                    None => String::new(),
-                };
+                let server = server.name.clone().unwrap_or_default();
                 edit_server(server);
             }
             Some(SubCommands::Remove(servers)) => {
                 remove_server(servers.names.clone());
             }
             Some(SubCommands::Rename(server)) => {
-                let server = match server.name.clone() {
-                    Some(server) => server,
-                    None => String::new(),
-                };
+                let server = server.name.clone().unwrap_or_default();
                 rename_server(server);
             }
-            None => connect_server(),
+            None => {
+                let server = self.server.clone().unwrap_or_default();
+                connect_server(server);
+            }
         }
     }
 }
