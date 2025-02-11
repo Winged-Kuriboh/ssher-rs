@@ -24,15 +24,18 @@ ssher
 ssher add
 ```
 
-3. Remove a server
+3. Remove servers
 
 ```bash
+# remove, rm
 ssher rm
+ssher rm <server_a> <server_b>
 ```
 
 4. List servers
 
 ```bash
+# list, ls
 ssher ls
 ```
 
@@ -40,19 +43,47 @@ ssher ls
 
 ```bash
 ssher rename
+ssher rename <server_a>
 ```
 
-6. Check version
+6. Edit a server
 
 ```bash
-ssher version
+ssher edit
+ssher edit <server>
 ```
 
-7. Help
+7. Check version
+
+```bash
+# version, v
+ssher v
+```
+
+8. Help
 
 ```bash
 ssher help
 ```
+
+## Completions
+
+```bash
+# bash
+source <(ssher completion bash)
+
+# zsh
+source <(ssher completion zsh)
+
+# fish
+ssher completion fish | source
+
+# powershell
+ssher completion powershell > ssher.ps1
+. .\ssher.ps1
+```
+
+> You can add the command to your shell's profile e.g. `~/.bashrc` or `~/.zshrc` to enable completions for each session.
 
 ## Configuration
 
