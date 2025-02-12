@@ -13,7 +13,7 @@ keywords = ["ssher"]
 
 [dependencies]
 base64 = "0.22.1"
-clap = { version = "4.5.28", features = [
+clap = { version = "4.5.29", features = [
     "derive",
     "string",
     "unstable-ext",
