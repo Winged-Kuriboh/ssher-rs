@@ -5,9 +5,9 @@ use crate::{
         version,
     },
     colord_print::red,
-    command::{print_completions, server_completer, server_possible_values},
+    command::{print_completions, server_completer, servers_len},
 };
-use clap::{Args, CommandFactory, Parser, Subcommand, ValueHint};
+use clap::{Args, CommandFactory, Parser, Subcommand};
 use clap_complete::{ArgValueCompleter, CompleteEnv, Shell};
 
 #[derive(Debug, Parser)]
@@ -21,7 +21,7 @@ pub(crate) struct Cli {
     command: Option<SubCommands>,
 
     #[arg(short, long, help = "Server name")]
-    #[arg(add = ArgValueCompleter::new(server_completer), value_parser = server_possible_values(), num_args = 1)]
+    #[arg(add = ArgValueCompleter::new(server_completer), num_args = 1)]
     server: Option<String>,
 }
 
@@ -78,13 +78,13 @@ enum SubCommands {
 
 #[derive(Debug, Args)]
 struct ServerArgs {
-    #[arg(value_hint = ValueHint::Other, add = ArgValueCompleter::new(server_completer), value_parser = server_possible_values(), num_args = ..=1)]
+    #[arg(add = ArgValueCompleter::new(server_completer), num_args = 1)]
     name: Option<String>,
 }
 
 #[derive(Debug, Args)]
 struct ServersArgs {
-    #[arg(value_hint = ValueHint::Other, add = ArgValueCompleter::new(server_completer), value_parser = server_possible_values(), num_args = ..=server_possible_values().len())]
+    #[arg(add = ArgValueCompleter::new(server_completer), num_args = ..=servers_len())]
     names: Vec<String>,
 }
 

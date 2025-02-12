@@ -32,12 +32,19 @@ pub(crate) fn server_possible_values() -> Vec<PossibleValue> {
         .collect()
 }
 
-pub(crate) fn server_completer(_current: &std::ffi::OsStr) -> Vec<CompletionCandidate> {
+pub(crate) fn servers_len() -> usize {
+    load_config().servers.len()
+}
+
+pub(crate) fn server_completer(current: &std::ffi::OsStr) -> Vec<CompletionCandidate> {
     let config = load_config();
+
+    let current = current.to_str().unwrap_or_default();
 
     config
         .servers
         .iter()
+        .filter(|s| s.name.contains(current) || s.host.contains(current))
         .map(|s| {
             let help = Some(StyledStr::from(format!(
                 "[{}] {}@{}:{}",
