@@ -167,7 +167,6 @@ pub(crate) fn connect_server(server: String) {
         }
     };
 
-    // if let Some(server) = servers_select_prompt(&config.servers) {
     // If the server is not marked as current, mark it as current,
     // and unmark all others.
     if server.current.is_none_or(|c| !c) {
@@ -254,5 +253,4 @@ pub(crate) fn connect_server(server: String) {
     } else {
         red("😿 Authentication failed.");
     }
-    // }
 }
