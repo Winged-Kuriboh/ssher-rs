@@ -5,7 +5,7 @@ use crate::{
         version,
     },
     colord_print::red,
-    command::{print_completions, server_completer, servers_len},
+    common::{print_completions, server_completer, servers_len},
 };
 use clap::{
     builder::{styling::AnsiColor, Styles},

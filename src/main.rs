@@ -3,7 +3,7 @@ mod cli;
 mod cli_builder;
 mod cmd;
 mod colord_print;
-mod command;
+mod common;
 mod config;
 mod model;
 mod prompt;
