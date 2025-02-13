@@ -19,7 +19,7 @@ use termion::{async_stdin, raw::IntoRawMode};
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::AsyncResolver;
 
-const VERSION: &str = "0.3.1";
+const VERSION: &str = "0.3.2";
 
 pub(crate) fn version() {
     green(format!("😸 Version: v{}", VERSION).as_str());
