@@ -72,16 +72,21 @@ ssher help
 ```bash
 # bash
 source <(ssher completion bash)
+source <(COMPLETE=bash ssher)
 
 # zsh
 source <(ssher completion zsh)
+source <(COMPLETE=bash zsh)
 
 # fish
 ssher completion fish | source
+source (COMPLETE=fish ssher | psub)
 
 # powershell
 ssher completion powershell > ssher.ps1
 . .\ssher.ps1
+$env:COMPLETE = "powershell"
+ssher | Out-String | Invoke-Expression
 ```
 
 > You can add the command to your shell's profile e.g. `~/.bashrc` or `~/.zshrc` to enable completions for each session.
@@ -89,3 +94,27 @@ ssher completion powershell > ssher.ps1
 ## Configuration
 
 The configuration file is saved in the `~/.ssher.yaml` file.
+
+## Troubleshooting
+
+1. MacOS default bash version is too low, you may occur the following error when using completions `source <(COMPLETE=bash ssher)`:
+
+```bash
+$ source <(COMPLETE=bash ssher)
+error: Broken pipe (os error 32)
+```
+
+Solutions:
+
+- Use the following command to upgrade bash:
+
+```bash
+brew install bash
+```
+
+- Generate completions to a file and source it:
+
+```bash
+COMPLETE=bash ssher > .ssher_bash_completion.sh
+source .ssher_bash_completion.sh
+```

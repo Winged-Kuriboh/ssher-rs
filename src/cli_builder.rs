@@ -5,10 +5,13 @@ use crate::{
         version,
     },
     colord_print::red,
-    command::{print_completions, server_completer, server_possible_values},
+    command::{print_completions, server_completer, servers_len},
 };
-use clap::{Arg, Command};
-use clap_complete::{ArgValueCompleter, Shell};
+use clap::{
+    builder::{styling::AnsiColor, Styles},
+    Arg, Command,
+};
+use clap_complete::{ArgValueCompleter, CompleteEnv, Shell};
 
 fn version_cmd() -> Command {
     Command::new("version")
@@ -43,60 +46,46 @@ fn list_servers_cmd() -> Command {
 }
 
 fn edit_server_cmd() -> Command {
-    let servers = server_possible_values();
-
     Command::new("edit")
         .about("Edit a server")
         .allow_missing_positional(true)
         .arg(
-            clap::Arg::new("server")
-                .value_parser(servers)
+            Arg::new("server")
+                .add(ArgValueCompleter::new(server_completer))
                 .num_args(..=1),
         )
         .disable_help_flag(true)
 }
 
 fn remove_server_cmd() -> Command {
-    let servers = server_possible_values();
-    let s_len = servers.len();
-
     Command::new("remove")
         .about("Remove a server or servers")
         .visible_alias("rm")
         .allow_missing_positional(true)
-        .arg(
-            clap::Arg::new("servers")
-                .value_parser(servers)
-                .num_args(..=s_len),
-        )
+        .arg(clap::Arg::new("servers").num_args(..=servers_len()))
         .disable_help_flag(true)
 }
 
 fn rename_server_cmd() -> Command {
-    let servers = server_possible_values();
-
     Command::new("rename")
         .about("Rename a server")
         .allow_missing_positional(true)
         .arg(
             Arg::new("server")
                 .add(ArgValueCompleter::new(server_completer))
-                .value_parser(servers)
                 .num_args(..=1),
         )
         .disable_help_flag(true)
 }
 
 fn build_cli() -> Command {
-    let servers = server_possible_values();
     Command::new("ssher")
         .about("ssher is an easy-to-use command line tool for connecting to remote servers.")
         .arg(
             Arg::new("server")
                 .long("server")
                 .short('s')
-                .value_parser(servers)
-                .num_args(1)
+                .add(ArgValueCompleter::new(server_completer))
                 .help("Server name"),
         )
         .subcommands([
@@ -108,11 +97,18 @@ fn build_cli() -> Command {
             remove_server_cmd(),
             rename_server_cmd(),
         ])
+        .styles(
+            Styles::styled()
+                .header(AnsiColor::Yellow.on_default())
+                .usage(AnsiColor::Yellow.on_default())
+                .literal(AnsiColor::Cyan.on_default())
+                .placeholder(AnsiColor::Cyan.on_default()),
+        )
         .args_conflicts_with_subcommands(true)
 }
 
 pub(crate) fn run() {
-    clap_complete::CompleteEnv::with_factory(build_cli).complete();
+    CompleteEnv::with_factory(build_cli).complete();
 
     let cli = build_cli();
 

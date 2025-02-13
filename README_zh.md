@@ -72,16 +72,21 @@ ssher help
 ```bash
 # bash
 source <(ssher completion bash)
+source <(COMPLETE=bash ssher)
 
 # zsh
 source <(ssher completion zsh)
+source <(COMPLETE=bash zsh)
 
 # fish
 ssher completion fish | source
+source (COMPLETE=fish ssher | psub)
 
 # powershell
 ssher completion powershell > ssher.ps1
 . .\ssher.ps1
+$env:COMPLETE = "powershell"
+ssher | Out-String | Invoke-Expression
 ```
 
 > 你也可以将上面的命令添加到你的 `~/.bashrc` 或 `~/.zshrc` 中，这样每次打开终端就会自动加载补全。
@@ -89,3 +94,27 @@ ssher completion powershell > ssher.ps1
 ## 配置
 
 配置文件保存在 `~/.ssher.yaml` 文件中。
+
+## 故障排除
+
+1. MacOS 默认的 bash 版本过低，当使用补全功能 `source <(COMPLETE=bash ssher)` 时，可能会出现以下错误：
+
+```bash
+$ source <(COMPLETE=bash ssher)
+error: Broken pipe (os error 32)
+```
+
+解决方案:
+
+- 使用如下命令升级 bash：
+
+```bash
+brew install bash
+```
+
+- 先生成补全文件，然后再加载：
+
+```bash
+COMPLETE=bash ssher > .ssher_bash_completion.sh
+source .ssher_bash_completion.sh
+```

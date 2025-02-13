@@ -7,21 +7,33 @@ use crate::{
     colord_print::red,
     command::{print_completions, server_completer, servers_len},
 };
-use clap::{Args, CommandFactory, Parser, Subcommand};
+use clap::{
+    builder::{styling::AnsiColor, Styles},
+    Args, CommandFactory, Parser, Subcommand,
+};
 use clap_complete::{ArgValueCompleter, CompleteEnv, Shell};
 
 #[derive(Debug, Parser)]
 #[command(
     name = "ssher",
     about = "ssher is an easy-to-use command line tool for connecting to remote servers.",
-    args_conflicts_with_subcommands = true
+    args_conflicts_with_subcommands = true,
+    styles = Styles::styled()
+    .header(AnsiColor::Yellow.on_default())
+    .usage(AnsiColor::Yellow.on_default())
+    .literal(AnsiColor::Cyan.on_default())
+    .placeholder(AnsiColor::Cyan.on_default())
 )]
 pub(crate) struct Cli {
     #[command(subcommand)]
     command: Option<SubCommands>,
 
-    #[arg(short, long, help = "Server name")]
-    #[arg(add = ArgValueCompleter::new(server_completer), num_args = 1)]
+    #[arg(
+        short,
+        long,
+        help = "Server name",
+        add = ArgValueCompleter::new(server_completer),
+    )]
     server: Option<String>,
 }
 
@@ -30,16 +42,25 @@ enum SubCommands {
     #[command(
         name = "version",
         about = "Show version",
-        alias = "v",
+        visible_alias = "v",
         disable_help_flag = true
     )]
     Version,
-    #[command(name = "add", about = "Add a new server")]
+    #[command(
+        name = "completion",
+        about = "Generate shell completion script",
+        disable_help_flag = true
+    )]
+    Completion {
+        #[command(subcommand)]
+        command: Option<CompletionSubCommands>,
+    },
+    #[command(name = "add", about = "Add a new server", disable_help_flag = true)]
     Add,
     #[command(
         name = "list",
         about = "List all servers",
-        alias = "ls",
+        visible_alias = "ls",
         disable_help_flag = true
     )]
     List,
@@ -53,7 +74,7 @@ enum SubCommands {
     #[command(
         name = "remove",
         about = "Remove a server or servers",
-        alias = "rm",
+        visible_alias = "rm",
         allow_missing_positional = true,
         disable_help_flag = true
     )]
@@ -65,20 +86,11 @@ enum SubCommands {
         disable_help_flag = true
     )]
     Rename(ServerArgs),
-    #[command(
-        name = "completion",
-        about = "Generate shell completion script",
-        disable_help_flag = true
-    )]
-    Completion {
-        #[command(subcommand)]
-        command: Option<CompletionSubCommands>,
-    },
 }
 
 #[derive(Debug, Args)]
 struct ServerArgs {
-    #[arg(add = ArgValueCompleter::new(server_completer), num_args = 1)]
+    #[arg(add = ArgValueCompleter::new(server_completer), num_args = ..=1)]
     name: Option<String>,
 }
 
@@ -98,11 +110,13 @@ enum CompletionSubCommands {
     Fish,
     #[command(name = "powershell", about = "Generate powershell completion script")]
     Powershell,
+    #[command(name = "elvish", about = "Generate elvish completion script")]
+    Elvish,
 }
 
 impl Cli {
     pub(crate) fn new() -> Self {
-        CompleteEnv::with_factory(Self::command).complete();
+        CompleteEnv::with_factory(Cli::command).complete();
         Self::parse()
     }
 
@@ -117,6 +131,7 @@ impl Cli {
                     Some(CompletionSubCommands::Zsh) => Shell::Zsh,
                     Some(CompletionSubCommands::Fish) => Shell::Fish,
                     Some(CompletionSubCommands::Powershell) => Shell::PowerShell,
+                    Some(CompletionSubCommands::Elvish) => Shell::Elvish,
                     None => {
                         red("😿 Please specify a shell(bash, zsh, fish, powershell)");
                         return;
