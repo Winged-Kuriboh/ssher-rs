@@ -1,14 +1,28 @@
 # ssher
 
-English | [简体中文](./README_zh.md)
+English | [简体中文](./README_zh-CN.md)
 
 ssher is an easy-to-use command line tool for connecting to remote servers.
 
 ## Installation
 
+- Install with `cargo install`
+
 ```bash
 cargo install ssher
 ```
+
+- Install from binary
+
+For MacOS or Linux:
+
+```bash
+curl -sSL https://github.com/poneding/ssher-rs/raw/master/install.sh | sh
+```
+
+For Windows:
+
+Download the lastest executable from [Releases](https://github.com/poneding/ssher-rs/releases/latest) and add it to the PATH.
 
 ## Usage
 
