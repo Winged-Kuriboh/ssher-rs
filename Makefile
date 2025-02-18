@@ -1,4 +1,4 @@
-VERSION := $(shell cargo pkgid | awk -F'@' '{print $$NF}')
+VERSION := $(shell cargo read-manifest| jq -r .version)
 export VERSION
 
 .PHONY:
