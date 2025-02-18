@@ -7,7 +7,7 @@ use crate::{
     },
 };
 use base64::{engine::general_purpose, Engine};
-use ssh2::Session;
+use ssh2::{PtyModes, Session};
 use std::{
     io::{self, Read, Write},
     net::TcpStream,
@@ -15,7 +15,7 @@ use std::{
     vec,
 };
 use tabled::{settings::Style, Table};
-use termion::{async_stdin, raw::IntoRawMode};
+use termion::{async_stdin, raw::IntoRawMode, terminal_size};
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::AsyncResolver;
 
@@ -222,7 +222,14 @@ pub(crate) fn connect_server(server: String) {
     if sess.authenticated() {
         let mut channel = sess.channel_session().unwrap();
 
-        channel.request_pty("xterm-256color", None, None).unwrap();
+        let (mut cols, mut rows) = terminal_size().unwrap();
+        channel
+            .request_pty(
+                "xterm-256color",
+                Some(PtyModes::new()),
+                Some((cols as u32, rows as u32, 0, 0)),
+            )
+            .unwrap();
         channel
             .handle_extended_data(ssh2::ExtendedData::Merge)
             .unwrap();
@@ -234,6 +241,16 @@ pub(crate) fn connect_server(server: String) {
 
         let mut buff_in = Vec::new();
         while !channel.eof() {
+            // monite terminal size changes
+            let (new_cols, new_rows) = terminal_size().unwrap();
+            if cols != new_cols || rows != new_rows {
+                cols = new_cols;
+                rows = new_rows;
+                channel
+                    .request_pty_size(new_cols as u32, new_rows as u32, None, None)
+                    .unwrap();
+            }
+
             let bytes_available = channel.read_window().available;
             if bytes_available > 0 {
                 let mut buffer = vec![0; bytes_available as usize];
