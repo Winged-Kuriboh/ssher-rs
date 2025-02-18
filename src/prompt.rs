@@ -62,9 +62,11 @@ pub(crate) fn servers_select_prompt(server: &[Server]) -> Option<Server> {
 
     selections.push("✗ Exit".to_string());
 
+    let current_server_index = server.iter().position(|s| s.current == Some(true));
+
     let selection = Select::with_theme(&default_theme())
         .with_prompt("Select a server:")
-        .default(0)
+        .default(current_server_index.unwrap_or_default())
         .report(false)
         .items(&selections)
         .interact()
