@@ -4,9 +4,9 @@ use crate::{
         add_server, connect_server, edit_server, list_servers, remove_server, rename_server,
         version,
     },
-    colord_print::red,
     common::{print_completions, server_completer, servers_len},
 };
+use anyhow::Ok;
 use clap::{
     builder::{styling::AnsiColor, Styles},
     Arg, Command,
@@ -107,7 +107,7 @@ fn build_cli() -> Command {
         .args_conflicts_with_subcommands(true)
 }
 
-pub(crate) fn run() {
+pub(crate) async fn run() -> anyhow::Result<()> {
     CompleteEnv::with_factory(build_cli).complete();
 
     let cli = build_cli();
@@ -125,14 +125,13 @@ pub(crate) fn run() {
                 Some(("fish", _)) => Shell::Fish,
                 Some(("powershell", _)) => Shell::PowerShell,
                 _ => {
-                    red("😿 Please specify a shell(bash, zsh, fish, powershell)");
-                    return;
+                    anyhow::bail!("😿 Please specify a shell(bash, zsh, fish, powershell)")
                 }
             };
-            print_completions(shell, &mut build_cli());
+            print_completions(shell, &mut build_cli())?;
         }
         Some(("add", _)) => {
-            add_server();
+            add_server()?;
         }
         Some(("list", _)) => {
             list_servers();
@@ -142,7 +141,7 @@ pub(crate) fn run() {
                 Some(s) => s.to_string(),
                 None => String::new(),
             };
-            edit_server(server);
+            edit_server(server)?;
         }
         Some(("remove", arg_matches)) => {
             let mut servers: Vec<String> = arg_matches
@@ -155,14 +154,14 @@ pub(crate) fn run() {
                 servers.dedup();
             }
 
-            remove_server(servers);
+            remove_server(servers)?;
         }
         Some(("rename", arg_matches)) => {
             let server = match arg_matches.get_one::<String>("server") {
                 Some(s) => s.to_string(),
                 None => String::new(),
             };
-            rename_server(server);
+            rename_server(server)?;
         }
         Some((_, _)) => {}
         None => {
@@ -170,7 +169,8 @@ pub(crate) fn run() {
                 Some(s) => s.to_string(),
                 None => String::new(),
             };
-            connect_server(server);
+            connect_server(server).await?;
         }
     }
+    Ok(())
 }

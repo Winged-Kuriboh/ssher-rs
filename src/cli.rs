@@ -4,7 +4,6 @@ use crate::{
         add_server, connect_server, edit_server, list_servers, remove_server, rename_server,
         version,
     },
-    colord_print::red,
     common::{print_completions, server_completer, servers_len},
 };
 use clap::{
@@ -120,7 +119,7 @@ impl Cli {
         Self::parse()
     }
 
-    pub(crate) fn run(&self) {
+    pub(crate) async fn run(&self) -> anyhow::Result<()> {
         match &self.command {
             Some(SubCommands::Version) => {
                 version();
@@ -133,33 +132,34 @@ impl Cli {
                     Some(CompletionSubCommands::Powershell) => Shell::PowerShell,
                     Some(CompletionSubCommands::Elvish) => Shell::Elvish,
                     None => {
-                        red("😿 Please specify a shell(bash, zsh, fish, powershell)");
-                        return;
+                        anyhow::bail!("😿 Please specify a shell(bash, zsh, fish, powershell)")
                     }
                 };
-                print_completions(shell, &mut Cli::command());
+                print_completions(shell, &mut Cli::command())?;
             }
             Some(SubCommands::Add) => {
-                add_server();
+                add_server()?;
             }
             Some(SubCommands::List) => {
                 list_servers();
             }
             Some(SubCommands::Edit(server)) => {
                 let server = server.name.clone().unwrap_or_default();
-                edit_server(server);
+                edit_server(server)?;
             }
             Some(SubCommands::Remove(servers)) => {
-                remove_server(servers.names.clone());
+                remove_server(servers.names.clone())?;
             }
             Some(SubCommands::Rename(server)) => {
                 let server = server.name.clone().unwrap_or_default();
-                rename_server(server);
+                rename_server(server)?;
             }
             None => {
                 let server = self.server.clone().unwrap_or_default();
-                connect_server(server);
+                connect_server(server).await?;
             }
         }
+
+        Ok(())
     }
 }

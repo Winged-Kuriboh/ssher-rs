@@ -5,6 +5,7 @@ edition = "2021"
 authors = ["Pone Ding <poneding@gmail.com>"]
 description = "ssher is an easy-to-use command line tool for connecting to remote servers."
 categories = ["command-line-interface"]
+documentation = "https://docs.rs/ssher"
 repository = "https://github.com/poneding/ssher-rs"
 homepage = "https://github.com/poneding/ssher-rs"
 license = "MIT OR Apache-2.0"
@@ -12,6 +13,7 @@ readme = "README.md"
 keywords = ["ssher"]
 
 [dependencies]
+anyhow = "1.0.95"
 base64 = "0.22.1"
 clap = { version = "4.5.30", features = [
     "derive",
@@ -21,12 +23,12 @@ clap = { version = "4.5.30", features = [
 ] }
 clap_complete = { version = "4.5.45", features = ["unstable-dynamic"] }
 console = "0.15.10"
+crossterm = "0.28.1"
 dialoguer = "0.11.0"
+russh = "0.50.2"
 serde = { version = "1.0.217", features = ["derive"] }
 serde_yaml = "0.9.34"
 shellexpand = "3.1.0"
-ssh2 = { version = "0.9.5", features = ["vendored-openssl"] }
 tabled = "0.18.0"
-termion = "4.0.3"
 tokio = { version = "1.43.0", features = ["full"] }
 trust-dns-resolver = "0.23.2"

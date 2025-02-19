@@ -79,7 +79,7 @@ pub(crate) fn servers_select_prompt(server: &[Server]) -> Option<Server> {
     Some(server[selection].clone())
 }
 
-fn server_form_prompt(server: &Server, config: &Config) -> Option<Server> {
+fn server_form_prompt(server: &Server, config: &Config) -> anyhow::Result<Option<Server>> {
     let name: String = Input::with_theme(&default_theme())
         .with_prompt("Name(*):")
         .with_initial_text(server.name.clone())
@@ -92,23 +92,20 @@ fn server_form_prompt(server: &Server, config: &Config) -> Option<Server> {
             }
         })
         .allow_empty(false)
-        .interact_text()
-        .unwrap();
+        .interact_text()?;
 
     let host: String = Input::with_theme(&default_theme())
         .with_prompt("Host(*):")
         .with_initial_text(server.host.clone())
         .allow_empty(false)
-        .interact_text()
-        .unwrap();
+        .interact_text()?;
 
     let port: u16 = Input::with_theme(&default_theme())
         .with_prompt("Port(*):")
         .with_initial_text(server.port.to_string())
         .show_default(false)
         .allow_empty(false)
-        .interact_text()
-        .unwrap();
+        .interact_text()?;
 
     let user: String = Input::with_theme(&default_theme())
         .with_prompt("User(*):")
@@ -116,14 +113,12 @@ fn server_form_prompt(server: &Server, config: &Config) -> Option<Server> {
         .with_initial_text(server.user.clone())
         .show_default(false)
         .allow_empty(false)
-        .interact_text()
-        .unwrap();
+        .interact_text()?;
 
     let password: String = Password::with_theme(&default_theme())
         .with_prompt("Password:")
         .allow_empty_password(true)
-        .interact()
-        .unwrap();
+        .interact()?;
 
     let identity_file: String = Input::with_theme(&default_theme())
         .with_prompt("IdentityFile:")
@@ -134,10 +129,9 @@ fn server_form_prompt(server: &Server, config: &Config) -> Option<Server> {
                 .unwrap_or(String::from("~/.ssh/id_rsa")),
         )
         .allow_empty(true)
-        .interact_text()
-        .unwrap();
+        .interact_text()?;
 
-    Some(Server {
+    Ok(Some(Server {
         name,
         host,
         port,
@@ -154,10 +148,10 @@ fn server_form_prompt(server: &Server, config: &Config) -> Option<Server> {
             Some(identity_file)
         },
         current: None,
-    })
+    }))
 }
 
-pub(crate) fn add_server_form_prompt(config: &Config) -> Option<Server> {
+pub(crate) fn add_server_form_prompt(config: &Config) -> anyhow::Result<Option<Server>> {
     let default_server = Server {
         name: "".to_string(),
         host: "".to_string(),
@@ -171,35 +165,37 @@ pub(crate) fn add_server_form_prompt(config: &Config) -> Option<Server> {
     server_form_prompt(&default_server, config)
 }
 
-pub(crate) fn edit_server_form_prompt(config: &Config, server: &Server) -> Option<Server> {
+pub(crate) fn edit_server_form_prompt(
+    config: &Config,
+    server: &Server,
+) -> anyhow::Result<Option<Server>> {
     server_form_prompt(server, config)
 }
 
-pub(crate) fn confirm_prompt(prompt: &str) -> bool {
-    Confirm::with_theme(&default_theme())
+pub(crate) fn confirm_prompt(prompt: &str) -> anyhow::Result<bool> {
+    let res = Confirm::with_theme(&default_theme())
         .with_prompt(prompt)
         .default(false)
         .report(false)
-        .interact()
-        .unwrap()
+        .interact()?;
+
+    Ok(res)
 }
 
-pub(crate) fn yesno_select_prompt(prompt: &str) -> bool {
+pub(crate) fn yesno_select_prompt(prompt: &str) -> anyhow::Result<bool> {
     let selections = vec!["No", "Yes"];
     let selection = Select::with_theme(&default_theme())
         .with_prompt(prompt)
         .default(0)
         .report(false)
         .items(&selections)
-        .interact()
-        .ok()
-        .unwrap();
+        .interact()?;
 
-    selection == 1
+    Ok(selection == 1)
 }
 
-pub(crate) fn rename_server_prompt(config: &Config, server: &Server) -> String {
-    Input::with_theme(&default_theme())
+pub(crate) fn rename_server_prompt(config: &Config, server: &Server) -> anyhow::Result<String> {
+    let res = Input::with_theme(&default_theme())
         .with_prompt("New name(*):")
         .validate_with(|input: &String| {
             if *input == server.name {
@@ -215,6 +211,7 @@ pub(crate) fn rename_server_prompt(config: &Config, server: &Server) -> String {
         })
         .report(false)
         .allow_empty(false)
-        .interact_text()
-        .unwrap()
+        .interact_text()?;
+
+    Ok(res)
 }

@@ -3,17 +3,17 @@ use clap::{builder::StyledStr, Command};
 use clap_complete::{env::Shells, generate, CompletionCandidate, Shell};
 use std::io;
 
-pub(crate) fn print_completions(shell: Shell, cmd: &mut Command) {
+pub(crate) fn print_completions(shell: Shell, cmd: &mut Command) -> anyhow::Result<()> {
     generate(shell, cmd, cmd.get_name().to_string(), &mut io::stdout());
 
     println!();
 
     let name = cmd.get_name();
-    Shells::builtins()
-        .completer(shell.to_string().as_str())
-        .unwrap()
-        .write_registration("COMPLETE", name, name, name, &mut io::stdout())
-        .unwrap();
+    if let Some(completer) = Shells::builtins().completer(shell.to_string().as_str()) {
+        completer.write_registration("COMPLETE", name, name, name, &mut io::stdout())?;
+    }
+
+    Ok(())
 }
 
 pub(crate) fn servers_len() -> usize {

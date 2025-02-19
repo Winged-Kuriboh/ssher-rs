@@ -1,4 +1,5 @@
 use cli::Cli;
+use colord_print::red;
 mod cli;
 mod cli_builder;
 mod cmd;
@@ -7,11 +8,20 @@ mod common;
 mod config;
 mod model;
 mod prompt;
+mod ssh;
 
-fn main() {
+#[tokio::main]
+async fn main() -> anyhow::Result<()> {
     // builder version
-    // cli_builder::run()
+    // if let Err(e) = cli_builder::run().await {
+    //     red(e.to_string().as_str());
+    // }
 
     // derive version
-    Cli::new().run();
+    if let Err(e) = Cli::new().run().await {
+        red(e.to_string().as_str());
+    }
+    // println!("Hello, world!");
+
+    Ok(())
 }
