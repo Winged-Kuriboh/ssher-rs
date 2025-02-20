@@ -13,7 +13,7 @@ readme = "README.md"
 keywords = ["ssher"]
 
 [dependencies]
-anyhow = "1.0.95"
+anyhow = "1.0.96"
 base64 = "0.22.1"
 clap = { version = "4.5.30", features = [
     "derive",
@@ -26,7 +26,7 @@ console = "0.15.10"
 crossterm = "0.28.1"
 dialoguer = "0.11.0"
 russh = "0.50.2"
-serde = { version = "1.0.217", features = ["derive"] }
+serde = { version = "1.0.218", features = ["derive"] }
 serde_yaml = "0.9.34"
 shellexpand = "3.1.0"
 tabled = "0.18.0"
