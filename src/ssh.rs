@@ -155,6 +155,7 @@ impl Session {
         let mut stdout = tokio::io::stdout();
         let mut buf = vec![0; 1024];
 
+        #[cfg(unix)]
         // Spawn a task to handle the SIGTERM signal
         tokio::spawn(Self::handle_terminate_signal(self.server_host.clone()));
 
@@ -214,6 +215,7 @@ impl Session {
         Ok(())
     }
 
+    #[cfg(unix)]
     async fn handle_terminate_signal(server_host: String) {
         if let Ok(mut signal) =
             tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
