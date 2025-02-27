@@ -15,13 +15,13 @@ keywords = ["ssher"]
 [dependencies]
 anyhow = "1.0.96"
 base64 = "0.22.1"
-clap = { version = "4.5.30", features = [
+clap = { version = "4.5.31", features = [
     "derive",
     "string",
     "unstable-ext",
     "env",
 ] }
-clap_complete = { version = "4.5.45", features = ["unstable-dynamic"] }
+clap_complete = { version = "4.5.46", features = ["unstable-dynamic"] }
 console = "0.15.10"
 crossterm = "0.28.1"
 dialoguer = "0.11.0"
