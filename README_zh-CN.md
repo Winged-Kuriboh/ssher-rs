@@ -4,6 +4,8 @@
 
 ssher 是一款连接远程服务器命令行工具，简单易用。
 
+![demo](docs/images/demo.gif)
+
 ## 安装
 
 - 通过 `cargo install` 安装
@@ -25,6 +27,8 @@ curl -sSL https://github.com/poneding/ssher-rs/raw/master/install.sh | sh
 从 [Releases](https://github.com/poneding/ssher-rs/releases/latest) 下载最新版本，解压得到可执行文件并将其添加到 PATH。
 
 ## 使用
+
+![usage](docs/images/usage.png)
 
 1. 选择服务器并连接
 
