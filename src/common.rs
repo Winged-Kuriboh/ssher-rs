@@ -1,6 +1,6 @@
 use crate::config::load_config;
-use clap::{builder::StyledStr, Command};
-use clap_complete::{env::Shells, generate, CompletionCandidate, Shell};
+use clap::{Command, builder::StyledStr};
+use clap_complete::{CompletionCandidate, Shell, env::Shells, generate};
 use std::io;
 
 pub(crate) fn print_completions(shell: Shell, cmd: &mut Command) -> anyhow::Result<()> {
@@ -17,11 +17,11 @@ pub(crate) fn print_completions(shell: Shell, cmd: &mut Command) -> anyhow::Resu
 }
 
 pub(crate) fn servers_len() -> usize {
-    load_config().servers.len()
+    load_config().unwrap().servers.len()
 }
 
 pub(crate) fn server_completer(current: &std::ffi::OsStr) -> Vec<CompletionCandidate> {
-    let config = load_config();
+    let config = load_config().unwrap();
 
     let current = current.to_str().unwrap_or_default();
 

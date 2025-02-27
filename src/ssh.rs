@@ -1,14 +1,14 @@
 use crate::model::Server;
-use base64::engine::general_purpose;
 use base64::Engine;
+use base64::engine::general_purpose;
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, is_raw_mode_enabled, size};
 use russh::keys::*;
 use russh::*;
 use std::env;
 use std::sync::Arc;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
-use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 use trust_dns_resolver::AsyncResolver;
+use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 
 pub(crate) async fn exec(server: Server) -> anyhow::Result<()> {
     let mut ssh = Session::connect(server).await?;
@@ -38,10 +38,34 @@ impl client::Handler for Client {
     }
 }
 
+struct RawModeGuard {
+    enabled: bool,
+}
+
+impl RawModeGuard {
+    fn new() -> anyhow::Result<Self> {
+        let mut enabled = is_raw_mode_enabled()?;
+        if !enabled {
+            enable_raw_mode()?;
+            enabled = true;
+        }
+        Ok(Self { enabled })
+    }
+}
+
+impl Drop for RawModeGuard {
+    fn drop(&mut self) {
+        if self.enabled {
+            disable_raw_mode().unwrap();
+        }
+    }
+}
+
 /// This struct is a convenience wrapper
 /// around a russh client
 /// that handles the input/output event loop
 pub struct Session {
+    server_host: String,
     session: client::Handle<Client>,
 }
 
@@ -55,12 +79,14 @@ impl Session {
             server.host.clone()
         } else {
             let resolver = AsyncResolver::tokio(ResolverConfig::default(), ResolverOpts::default());
-            let response = resolver.lookup_ip(server.host.as_str()).await;
+            let response = resolver
+                .lookup_ip(server.host.as_str())
+                .await
+                .map_err(|e| anyhow::anyhow!("DNS lookup failed: {}", e))?;
             response
-                .expect("DNS lookup failed")
                 .iter()
                 .next()
-                .expect("No IP addresses returned")
+                .ok_or_else(|| anyhow::anyhow!("No IP addresses returned for {}", server.host))?
                 .to_string()
         };
 
@@ -97,24 +123,27 @@ impl Session {
             anyhow::bail!("😿 Authentication failed.")
         }
 
-        Ok(Self { session })
+        Ok(Self {
+            server_host: server.host.clone(),
+            session,
+        })
     }
 
     async fn shell(&mut self) -> anyhow::Result<()> {
         // We're using `crossterm` to put the terminal into raw mode, so that we can
         // display the output of interactive applications correctly
-        enable_raw_mode()?;
+        let _raw_mode = RawModeGuard::new()?;
 
         let mut channel = self.session.channel_open_session().await?;
 
-        let (mut w, mut h) = size()?;
+        let (mut col, mut row) = size()?;
         // Request an interactive PTY from the server
         channel
             .request_pty(
                 true,
                 &env::var("TERM").unwrap_or("xterm".into()),
-                w as u32,
-                h as u32,
+                col as u32,
+                row as u32,
                 0,
                 0,
                 &[], // ideally you want to pass the actual terminal modes here
@@ -126,13 +155,16 @@ impl Session {
         let mut stdout = tokio::io::stdout();
         let mut buf = vec![0; 1024];
 
+        // Spawn a task to handle the SIGTERM signal
+        tokio::spawn(Self::handle_terminate_signal(self.server_host.clone()));
+
         loop {
-            let (new_w, new_h) = size()?;
-            if (w, h) != (new_w, new_h) {
-                w = new_w;
-                h = new_h;
+            let (new_col, new_row) = size()?;
+            if (col, row) != (new_col, new_row) {
+                col = new_col;
+                row = new_row;
                 channel
-                    .window_change(new_w as u32, new_h as u32, 0, 0)
+                    .window_change(new_col as u32, new_row as u32, 0, 0)
                     .await?;
             }
 
@@ -160,20 +192,16 @@ impl Session {
                         }
                         // The server has closed the channel
                         ChannelMsg::ExitStatus { .. } =>{
-                            // channel.eof().await?;
-                            // break;
-
-                            disable_raw_mode()?;
-                            std::process::exit(0);
+                            Self::close_connection(self.server_host.clone(), &mut stdout).await?;
+                            // stdout.write_all(format!("Connection to {} closed.\r\n", self.server_host.clone()).as_bytes()).await?;
+                            // stdout.flush().await?;
+                            channel.eof().await?;
+                            break;
                         }
                         _ => {}
                     }
                 },
             }
-        }
-
-        if is_raw_mode_enabled()? {
-            disable_raw_mode()?;
         }
 
         Ok(())
@@ -183,6 +211,36 @@ impl Session {
         self.session
             .disconnect(Disconnect::ByApplication, "", "English")
             .await?;
+        Ok(())
+    }
+
+    async fn handle_terminate_signal(server_host: String) {
+        if let Ok(mut signal) =
+            tokio::signal::unix::signal(tokio::signal::unix::SignalKind::terminate())
+        {
+            signal.recv().await;
+
+            if let Ok(true) = is_raw_mode_enabled() {
+                let _ = disable_raw_mode();
+            }
+            let mut stdout = tokio::io::stdout();
+            Self::close_connection(server_host, &mut stdout)
+                .await
+                .unwrap();
+
+            std::process::exit(0);
+        }
+    }
+
+    async fn close_connection(
+        server_host: String,
+        stdout: &mut tokio::io::Stdout,
+    ) -> anyhow::Result<()> {
+        stdout
+            .write_all(format!("Connection to {} closed.\r\n", server_host).as_bytes())
+            .await?;
+        stdout.flush().await?;
+
         Ok(())
     }
 }

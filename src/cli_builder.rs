@@ -8,8 +8,8 @@ use crate::{
 };
 use anyhow::Ok;
 use clap::{
-    builder::{styling::AnsiColor, Styles},
     Arg, Command,
+    builder::{Styles, styling::AnsiColor},
 };
 use clap_complete::{ArgValueCompleter, CompleteEnv, Shell};
 
@@ -134,7 +134,7 @@ pub(crate) async fn run() -> anyhow::Result<()> {
             add_server()?;
         }
         Some(("list", _)) => {
-            list_servers();
+            list_servers()?;
         }
         Some(("edit", arg_matches)) => {
             let server = match arg_matches.get_one::<String>("server") {

@@ -9,7 +9,7 @@ use crate::{
 };
 use anyhow::Ok;
 use std::vec;
-use tabled::{settings::Style, Table};
+use tabled::{Table, settings::Style};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
@@ -17,8 +17,8 @@ pub(crate) fn version() {
     green(format!("😸 Version: v{}", VERSION).as_str());
 }
 
-pub(crate) fn list_servers() {
-    let config = load_config();
+pub(crate) fn list_servers() -> anyhow::Result<()> {
+    let config = load_config()?;
 
     if config.servers.is_empty() {
         yellow("😿 No servers found");
@@ -29,10 +29,11 @@ pub(crate) fn list_servers() {
 
         println!("{table}")
     }
+    Ok(())
 }
 
 pub(crate) fn remove_server(servers: Vec<String>) -> anyhow::Result<()> {
-    let mut config = load_config();
+    let mut config = load_config()?;
 
     let servers = if servers.is_empty() {
         match servers_select_prompt(&config.servers) {
@@ -69,7 +70,7 @@ pub(crate) fn remove_server(servers: Vec<String>) -> anyhow::Result<()> {
                 server_removed.push(server);
             };
         }
-        save_config(&config);
+        save_config(&config)?;
         green(format!("😺 Server {} removed.", server_removed.join(", ")).as_str());
     }
 
@@ -77,13 +78,13 @@ pub(crate) fn remove_server(servers: Vec<String>) -> anyhow::Result<()> {
 }
 
 pub(crate) fn add_server() -> anyhow::Result<()> {
-    let mut config = load_config();
+    let mut config = load_config()?;
 
     if let Some(server) = add_server_form_prompt(&config)? {
         let server_name = server.name.clone();
 
         config.servers.push(server);
-        save_config(&config);
+        save_config(&config)?;
 
         green(format!("😺 Server {} added.", server_name).as_str());
     }
@@ -92,7 +93,7 @@ pub(crate) fn add_server() -> anyhow::Result<()> {
 }
 
 pub(crate) fn edit_server(server: String) -> anyhow::Result<()> {
-    let mut config = load_config();
+    let mut config = load_config()?;
 
     let server = match config.servers.iter().find(|s| s.name == server) {
         Some(s) => s.clone(),
@@ -108,7 +109,7 @@ pub(crate) fn edit_server(server: String) -> anyhow::Result<()> {
     if let Some(new_server) = edit_server_form_prompt(&config, &server)? {
         if let Some(index) = config.servers.iter().position(|s| s.name == server.name) {
             config.servers[index] = new_server;
-            save_config(&config);
+            save_config(&config)?;
             green(format!("😺 Server {} updated.", server.name).as_str());
         };
     }
@@ -117,7 +118,7 @@ pub(crate) fn edit_server(server: String) -> anyhow::Result<()> {
 }
 
 pub(crate) fn rename_server(server: String) -> anyhow::Result<()> {
-    let mut config = load_config();
+    let mut config = load_config()?;
 
     let server = match config.servers.iter().find(|s| s.name == server) {
         Some(s) => s.clone(),
@@ -137,7 +138,7 @@ pub(crate) fn rename_server(server: String) -> anyhow::Result<()> {
                 s.name = new_name.clone();
             }
         }
-        save_config(&config);
+        save_config(&config)?;
 
         green(format!("😺 Server {} renamed to {}.", server.name, new_name).as_str());
     }
@@ -146,7 +147,7 @@ pub(crate) fn rename_server(server: String) -> anyhow::Result<()> {
 }
 
 pub(crate) async fn connect_server(server: String) -> anyhow::Result<()> {
-    let mut config = load_config();
+    let mut config = load_config()?;
 
     let server = match config.servers.iter().find(|s| s.name == server) {
         Some(s) => s.clone(),
@@ -169,7 +170,7 @@ pub(crate) async fn connect_server(server: String) -> anyhow::Result<()> {
                 s.current = None;
             }
         }
-        save_config(&config);
+        save_config(&config)?;
     }
 
     ssh::exec(server).await?;

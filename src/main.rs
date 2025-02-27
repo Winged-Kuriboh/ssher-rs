@@ -21,7 +21,6 @@ async fn main() -> anyhow::Result<()> {
     if let Err(e) = Cli::new().run().await {
         red(e.to_string().as_str());
     }
-    // println!("Hello, world!");
 
-    Ok(())
+    std::process::exit(0);
 }

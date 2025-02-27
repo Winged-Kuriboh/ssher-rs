@@ -3,11 +3,11 @@ use crate::{
     colord_print::yellow,
     model::{Config, Server},
 };
-use base64::{engine::general_purpose, Engine};
+use base64::{Engine, engine::general_purpose};
 use dialoguer::{
-    console::{style, Style},
-    theme::ColorfulTheme,
     Confirm, Input, Password, Select,
+    console::{Style, style},
+    theme::ColorfulTheme,
 };
 
 pub(crate) fn default_theme() -> ColorfulTheme {

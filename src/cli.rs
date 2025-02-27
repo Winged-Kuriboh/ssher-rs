@@ -7,8 +7,8 @@ use crate::{
     common::{print_completions, server_completer, servers_len},
 };
 use clap::{
-    builder::{styling::AnsiColor, Styles},
     Args, CommandFactory, Parser, Subcommand,
+    builder::{Styles, styling::AnsiColor},
 };
 use clap_complete::{ArgValueCompleter, CompleteEnv, Shell};
 
@@ -141,7 +141,7 @@ impl Cli {
                 add_server()?;
             }
             Some(SubCommands::List) => {
-                list_servers();
+                list_servers()?;
             }
             Some(SubCommands::Edit(server)) => {
                 let server = server.name.clone().unwrap_or_default();
