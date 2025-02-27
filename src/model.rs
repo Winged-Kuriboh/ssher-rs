@@ -13,6 +13,7 @@ pub(crate) struct Server {
     pub(crate) password: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[tabled(display("tabled::derive::display::option", ""))]
+    #[tabled(rename = "IDENTITY FILE")]
     pub(crate) identity_file: Option<String>,
     #[serde(skip_serializing_if = "Option::is_none")]
     #[tabled(display = "display_option_bool")]
