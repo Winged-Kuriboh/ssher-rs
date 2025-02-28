@@ -1,9 +1,9 @@
 #![allow(dead_code)]
 use crate::{
     colord_print::yellow,
+    endec,
     model::{Config, Server},
 };
-use base64::{Engine, engine::general_purpose};
 use dialoguer::{
     Confirm, Input, Password, Select,
     console::{Style, style},
@@ -136,12 +136,7 @@ fn server_form_prompt(server: &Server, config: &Config) -> anyhow::Result<Option
         host,
         port,
         user,
-        password: if password.is_empty() {
-            None
-        } else {
-            // base64 encode
-            Some(general_purpose::STANDARD.encode(password))
-        },
+        password: endec::encode_string(password),
         identity_file: if identity_file.is_empty() {
             None
         } else {
