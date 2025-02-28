@@ -1,11 +1,11 @@
 use crate::model::Server;
-use base64::Engine;
-use base64::engine::general_purpose;
+use crate::{endec, red};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, is_raw_mode_enabled, size};
 use russh::keys::*;
 use russh::*;
 use std::env;
 use std::sync::Arc;
+use std::time::Duration;
 use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use trust_dns_resolver::AsyncResolver;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
@@ -56,7 +56,9 @@ impl RawModeGuard {
 impl Drop for RawModeGuard {
     fn drop(&mut self) {
         if self.enabled {
-            disable_raw_mode().unwrap();
+            if disable_raw_mode().is_err() {
+                red("Failed to disable raw mode.");
+            }
         }
     }
 }
@@ -90,13 +92,17 @@ impl Session {
                 .to_string()
         };
 
-        let mut session = client::connect(config, (host, server.port), Client::new()).await?;
+        let connect_future = client::connect(config, (host, server.port), Client::new());
+        let mut session = match tokio::time::timeout(Duration::from_secs(30), connect_future).await
+        {
+            Ok(session) => session?,
+            Err(_) => anyhow::bail!("Connection to {} timed out after 30s.", server.host.clone()),
+        };
 
         let auth_rs = match server.password {
             Some(ref password) if !password.is_empty() => {
-                let password = general_purpose::STANDARD.decode(password)?;
                 session
-                    .authenticate_password(server.user, String::from_utf8(password)?)
+                    .authenticate_password(server.user, endec::decode_string(password)?)
                     .await?
             }
             _ => {
@@ -194,8 +200,6 @@ impl Session {
                         // The server has closed the channel
                         ChannelMsg::ExitStatus { .. } =>{
                             Self::close_connection(self.server_host.clone(), &mut stdout).await?;
-                            // stdout.write_all(format!("Connection to {} closed.\r\n", self.server_host.clone()).as_bytes()).await?;
-                            // stdout.flush().await?;
                             channel.eof().await?;
                             break;
                         }
@@ -226,9 +230,7 @@ impl Session {
                 let _ = disable_raw_mode();
             }
             let mut stdout = tokio::io::stdout();
-            Self::close_connection(server_host, &mut stdout)
-                .await
-                .unwrap();
+            let _ = Self::close_connection(server_host, &mut stdout).await;
 
             std::process::exit(0);
         }
