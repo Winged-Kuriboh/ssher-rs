@@ -17,32 +17,31 @@ pub(crate) fn print_completions(shell: Shell, cmd: &mut Command) -> anyhow::Resu
 }
 
 pub(crate) fn servers_len() -> usize {
-    load_config().unwrap().servers.len()
+    load_config().map_or(0, |c| c.servers.len())
 }
 
 pub(crate) fn server_completer(current: &std::ffi::OsStr) -> Vec<CompletionCandidate> {
-    let config = load_config().unwrap();
+    load_config().map_or(vec![], |c| {
+        let current = current.to_str().unwrap_or_default();
 
-    let current = current.to_str().unwrap_or_default();
+        c.servers
+            .iter()
+            .filter(|s| s.name.contains(current) || s.host.contains(current))
+            .map(|s| {
+                let help = Some(StyledStr::from(format!(
+                    "[{}] {}@{}:{}",
+                    if s.current.unwrap_or_default() {
+                        "✲"
+                    } else {
+                        " "
+                    },
+                    s.user,
+                    s.host,
+                    s.port
+                )));
 
-    config
-        .servers
-        .iter()
-        .filter(|s| s.name.contains(current) || s.host.contains(current))
-        .map(|s| {
-            let help = Some(StyledStr::from(format!(
-                "[{}] {}@{}:{}",
-                if s.current.unwrap_or_default() {
-                    "✲"
-                } else {
-                    " "
-                },
-                s.user,
-                s.host,
-                s.port
-            )));
-
-            CompletionCandidate::new(s.name.clone()).help(help)
-        })
-        .collect()
+                CompletionCandidate::new(s.name.clone()).help(help)
+            })
+            .collect()
+    })
 }
