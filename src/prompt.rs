@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 use crate::{
+    cmd,
     colord_print::yellow,
     endec,
     model::{Config, Server},
@@ -60,6 +61,7 @@ pub(crate) fn servers_select_prompt(server: &[Server]) -> Option<Server> {
         })
         .collect();
 
+    selections.push("✚ Add a new server".to_string());
     selections.push("✗ Exit".to_string());
 
     let current_server_index = server.iter().position(|s| s.current == Some(true));
@@ -72,6 +74,15 @@ pub(crate) fn servers_select_prompt(server: &[Server]) -> Option<Server> {
         .interact()
         .ok()?;
 
+    // Add a new server
+    if selection == selections.len() - 2 {
+        if let Err(e) = cmd::add_server() {
+            yellow(&format!("😾 {}", e));
+        }
+        return None;
+    }
+
+    // Exit
     if selection == selections.len() - 1 {
         return None;
     }
