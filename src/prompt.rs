@@ -34,37 +34,37 @@ pub(crate) fn default_theme() -> ColorfulTheme {
     }
 }
 
-pub(crate) fn servers_select_prompt(server: &[Server]) -> Option<Server> {
-    let max_name_width = server.iter().map(|s| s.name.len()).max().unwrap_or(0);
-    let mut selections: Vec<String> = server
+pub(crate) fn servers_select_prompt(servers: &[Server]) -> Option<Server> {
+    let max_name_width = servers.iter().map(|s| s.name.len()).max().unwrap_or(0);
+    let mut selections: Vec<String> = servers
         .iter()
         .map(|s| {
-            if let Some(true) = s.current {
-                format!(
-                    "✲ {:<width$}\t({}@{}:{})",
-                    s.name,
-                    s.user,
-                    s.host,
-                    s.port,
-                    width = max_name_width
-                )
-            } else {
-                format!(
-                    "  {:<width$}\t({}@{}:{})",
-                    s.name,
-                    s.user,
-                    s.host,
-                    s.port,
-                    width = max_name_width
-                )
-            }
+            let prefix = match s.current {
+                Some(true) => "✲ ",
+                _ => "  ",
+            };
+            let subfix = match servers.len() {
+                1.. if s.name == servers[servers.len() - 1].name => "\n",
+                _ => "",
+            };
+
+            format!(
+                "{}{:<width$}\t({}@{}:{}){}",
+                prefix,
+                s.name,
+                s.user,
+                s.host,
+                s.port,
+                subfix,
+                width = max_name_width
+            )
         })
         .collect();
 
     selections.push("✚ Add a new server".to_string());
     selections.push("✗ Exit".to_string());
 
-    let current_server_index = server.iter().position(|s| s.current == Some(true));
+    let current_server_index = servers.iter().position(|s| s.current == Some(true));
 
     let selection = Select::with_theme(&default_theme())
         .with_prompt("Select a server:")
@@ -87,7 +87,7 @@ pub(crate) fn servers_select_prompt(server: &[Server]) -> Option<Server> {
         return None;
     }
 
-    Some(server[selection].clone())
+    Some(servers[selection].clone())
 }
 
 fn server_form_prompt(server: &Server, config: &Config) -> anyhow::Result<Option<Server>> {
