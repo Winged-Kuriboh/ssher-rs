@@ -15,7 +15,7 @@ keywords = ["ssher"]
 [dependencies]
 anyhow = "1.0.97"
 base64 = "0.22.1"
-clap = { version = "4.5.31", features = [
+clap = { version = "4.5.32", features = [
     "derive",
     "string",
     "unstable-ext",
@@ -25,7 +25,7 @@ clap_complete = { version = "4.5.46", features = ["unstable-dynamic"] }
 console = "0.15.11"
 crossterm = "0.28.1"
 dialoguer = "0.11.0"
-russh = "0.50.4"
+russh = "0.51.1"
 serde = { version = "1.0.219", features = ["derive"] }
 serde_yaml = "0.9.34"
 shellexpand = "3.1.0"
