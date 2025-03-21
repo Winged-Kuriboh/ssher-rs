@@ -21,7 +21,7 @@ clap = { version = "4.5.32", features = [
     "unstable-ext",
     "env",
 ] }
-clap_complete = { version = "4.5.46", features = ["unstable-dynamic"] }
+clap_complete = { version = "4.5.47", features = ["unstable-dynamic"] }
 console = "0.15.11"
 crossterm = "0.28.1"
 dialoguer = "0.11.0"
@@ -30,5 +30,5 @@ serde = { version = "1.0.219", features = ["derive"] }
 serde_yaml = "0.9.34"
 shellexpand = "3.1.0"
 tabled = "0.18.0"
-tokio = { version = "1.44.0", features = ["full"] }
+tokio = { version = "1.44.1", features = ["full"] }
 trust-dns-resolver = "0.23.2"
