@@ -14,7 +14,7 @@ use tabled::{Table, settings::Style};
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub(crate) fn version() {
-    green(format!("😸 Version: v{}", VERSION).as_str());
+    green(format!("😸 Version: v{}", VERSION));
 }
 
 pub(crate) fn list_servers() -> anyhow::Result<()> {
@@ -44,7 +44,7 @@ pub(crate) fn remove_server(servers: Vec<String>) -> anyhow::Result<()> {
         let mut servers_removed = vec![];
         for name in servers.clone() {
             if !config.servers.iter().any(|s| s.name == name) {
-                yellow(format!("😿 No server <{}> found", &name).as_str());
+                yellow(format!("😿 No server <{}> found", &name));
             } else {
                 servers_removed.push(name);
             }
@@ -71,7 +71,7 @@ pub(crate) fn remove_server(servers: Vec<String>) -> anyhow::Result<()> {
             };
         }
         save_config(&config)?;
-        green(format!("😺 Server {} removed.", server_removed.join(", ")).as_str());
+        green(format!("😺 Server {} removed.", server_removed.join(", ")));
     }
 
     Ok(())
@@ -86,7 +86,7 @@ pub(crate) fn add_server() -> anyhow::Result<()> {
         config.servers.push(server);
         save_config(&config)?;
 
-        green(format!("😺 Server {} added.", server_name).as_str());
+        green(format!("😺 Server {} added.", server_name));
     }
 
     Ok(())
@@ -110,7 +110,7 @@ pub(crate) fn edit_server(server: String) -> anyhow::Result<()> {
         if let Some(index) = config.servers.iter().position(|s| s.name == server.name) {
             config.servers[index] = new_server;
             save_config(&config)?;
-            green(format!("😺 Server {} updated.", server.name).as_str());
+            green(format!("😺 Server {} updated.", server.name));
         };
     }
 
@@ -140,7 +140,10 @@ pub(crate) fn rename_server(server: String) -> anyhow::Result<()> {
         }
         save_config(&config)?;
 
-        green(format!("😺 Server {} renamed to {}.", server.name, new_name).as_str());
+        green(format!(
+            "😺 Server {} renamed to {}.",
+            server.name, new_name
+        ));
     }
 
     Ok(())

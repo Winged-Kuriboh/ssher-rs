@@ -77,7 +77,7 @@ pub(crate) fn servers_select_prompt(servers: &[Server]) -> Option<Server> {
     // Add a new server
     if selection == selections.len() - 2 {
         if let Err(e) = cmd::add_server() {
-            yellow(&format!("😾 {}", e));
+            yellow(format!("😾 {}", e));
         }
         return None;
     }

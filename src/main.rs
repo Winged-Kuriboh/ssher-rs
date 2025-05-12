@@ -15,12 +15,12 @@ mod ssh;
 async fn main() -> anyhow::Result<()> {
     // builder version
     // if let Err(e) = cli_builder::run().await {
-    //     red(e.to_string().as_str());
+    //     red(e.to_string());
     // }
 
     // derive version
     if let Err(e) = Cli::new().run().await {
-        red(e.to_string().as_str());
+        red(e.to_string());
     }
 
     std::process::exit(0);
