@@ -23,17 +23,11 @@ pub(crate) struct Server {
 }
 
 pub(crate) fn display_password(value: &Option<String>) -> String {
-    match value {
-        Some(_) => "******".to_string(),
-        _ => "".to_string(),
-    }
+    value.as_ref().map_or("", |_| "******").to_string()
 }
 
 pub(crate) fn display_option_bool(value: &Option<bool>) -> String {
-    match value {
-        Some(true) => "✲".to_string(),
-        _ => " ".to_string(),
-    }
+    value.map_or(" ", |v| if v { "✲" } else { " " }).to_string()
 }
 
 #[derive(Serialize, Deserialize, Debug)]
