@@ -1,6 +1,7 @@
 use crate::{
     colord_print::{green, yellow},
     config::{load_config, save_config},
+    model::Server,
     prompt::{
         add_server_form_prompt, edit_server_form_prompt, rename_server_prompt,
         servers_select_prompt, yesno_select_prompt,
@@ -8,13 +9,59 @@ use crate::{
     ssh,
 };
 use anyhow::Ok;
-use std::vec;
+use ssh2_config::{ParseRule, SshConfig};
+use std::{fs::File, io::BufReader, path::Path, vec};
 use tabled::{Table, settings::Style};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
 
 pub(crate) fn version() {
     green(format!("😸 Version: v{}", VERSION));
+}
+pub(crate) fn import_servers() -> anyhow::Result<()> {
+    let path = shellexpand::tilde("~/.ssh/config").into_owned();
+    let mut reader: BufReader<File> = BufReader::new(File::open(Path::new(&path))?);
+    let ssh_config = SshConfig::default().parse(&mut reader, ParseRule::STRICT)?;
+    let mut config = load_config()?;
+    for host_entry in ssh_config.get_hosts() {
+        let name = host_entry
+            .pattern
+            .get(0)
+            .map(|clause| clause.pattern.clone())
+            .unwrap_or_else(||" ".to_string());
+        if name == "*".to_string() {
+            continue;
+        }
+        let host = host_entry
+            .params
+            .host_name
+            .clone()
+            .unwrap_or("".to_string());
+        let port = host_entry.params.port.unwrap_or(22);
+        let user = host_entry.params.user.clone().unwrap_or("".to_string());
+        let identity_file = host_entry.params.identity_file.clone().map(|paths| {
+            paths
+                .iter()
+                .filter_map(|p| p.to_str())
+                .collect::<Vec<&str>>()
+                .join(",")
+        });
+        let server = Server {
+            name,
+            host,
+            port,
+            user,
+            password: None,
+            identity_file,
+            current: None,
+        };
+        if !config.servers.contains(&server){
+            config.servers.push(server);
+        }
+    }
+    save_config(&config)?;
+    green(format!("😺 Servers Imported."));
+    Ok(())
 }
 
 pub(crate) fn list_servers() -> anyhow::Result<()> {

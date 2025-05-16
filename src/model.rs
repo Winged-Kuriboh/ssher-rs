@@ -1,7 +1,7 @@
 use serde::{Deserialize, Serialize};
 use tabled::Tabled;
 
-#[derive(Serialize, Deserialize, Debug, Clone, Tabled)]
+#[derive(Serialize, Deserialize, Debug, Clone, Tabled,PartialEq,Eq)]
 #[tabled(rename_all = "UPPERCASE")]
 pub(crate) struct Server {
     pub(crate) name: String,
