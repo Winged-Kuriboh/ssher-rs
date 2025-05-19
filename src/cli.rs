@@ -87,7 +87,7 @@ enum SubCommands {
     Rename(ServerArgs),
     #[command(
         name = "import",
-        about = "Import servers from ~/.ssh/config",
+        about = "Import servers from ssh config file eg. ~/.ssh/config",
         allow_missing_positional = true,
         disable_help_flag = true
     )]
