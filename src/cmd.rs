@@ -1,7 +1,7 @@
 use crate::{
     colord_print::{green, yellow},
     config::{load_config, save_config},
-    model::Server,
+    model::{Config, Server},
     prompt::{
         add_server_form_prompt, edit_server_form_prompt, rename_server_prompt,
         servers_select_prompt, yesno_select_prompt,
@@ -10,7 +10,7 @@ use crate::{
 };
 use anyhow::Ok;
 use ssh2_config::{ParseRule, SshConfig};
-use std::{fs::File, io::BufReader, path::Path, vec};
+use std::{fs::File, io::BufReader, vec};
 use tabled::{Table, settings::Style};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -18,49 +18,73 @@ const VERSION: &str = env!("CARGO_PKG_VERSION");
 pub(crate) fn version() {
     green(format!("😸 Version: v{}", VERSION));
 }
-pub(crate) fn import_servers() -> anyhow::Result<()> {
-    let path = shellexpand::tilde("~/.ssh/config").into_owned();
-    let mut reader: BufReader<File> = BufReader::new(File::open(Path::new(&path))?);
+
+fn get_server_from(config: &Config, name: &str) -> Option<Server> {
+    config.servers.iter().find(|s| s.name == name).cloned()
+}
+
+pub(crate) fn import_servers(config: String) -> anyhow::Result<()> {
+    let mut reader: BufReader<File> = BufReader::new(File::open(config)?);
     let ssh_config = SshConfig::default().parse(&mut reader, ParseRule::STRICT)?;
-    let mut config = load_config()?;
-    for host_entry in ssh_config.get_hosts() {
-        let name = host_entry
-            .pattern
-            .get(0)
-            .map(|clause| clause.pattern.clone())
-            .unwrap_or_else(||" ".to_string());
-        if name == "*".to_string() {
-            continue;
-        }
-        let host = host_entry
-            .params
-            .host_name
-            .clone()
-            .unwrap_or("".to_string());
-        let port = host_entry.params.port.unwrap_or(22);
-        let user = host_entry.params.user.clone().unwrap_or("".to_string());
-        let identity_file = host_entry.params.identity_file.clone().map(|paths| {
-            paths
-                .iter()
-                .filter_map(|p| p.to_str())
-                .collect::<Vec<&str>>()
-                .join(",")
-        });
-        let server = Server {
-            name,
-            host,
-            port,
-            user,
-            password: None,
-            identity_file,
-            current: None,
-        };
-        if !config.servers.contains(&server){
+
+    let servers = ssh_config
+        .get_hosts()
+        .iter()
+        .filter_map(|host_entry| {
+            let name = host_entry.pattern.first()?.pattern.clone();
+            if name == *"*" {
+                return None;
+            }
+            let host = host_entry.params.host_name.clone().unwrap_or_default();
+            let port = host_entry.params.port.unwrap_or(22);
+            let user = host_entry.params.user.clone().unwrap_or("root".to_string());
+            let identity_file = host_entry.params.identity_file.clone().map(|paths| {
+                paths
+                    .iter()
+                    .filter_map(|p| p.to_str())
+                    .collect::<Vec<&str>>()
+                    .join(",")
+            });
+            Some(Server {
+                name,
+                host,
+                port,
+                user,
+                password: None,
+                identity_file,
+                current: None,
+            })
+        })
+        .collect::<Vec<Server>>();
+
+    if !servers.is_empty() {
+        let mut config = load_config()?;
+
+        let mut imported = 0;
+        for server in servers {
+            if config.servers.iter().any(|s| s.name == server.name) {
+                yellow(format!(
+                    "😿 Server <{}> already exists, skipping.",
+                    &server.name
+                ));
+                continue;
+            }
             config.servers.push(server);
+            imported += 1;
         }
+        if imported > 0 {
+            save_config(&config)?;
+            green(format!(
+                "😺 {} servers imported from .ssh/config done.",
+                imported
+            ));
+        } else {
+            yellow("😿 No servers imported.")
+        }
+    } else {
+        yellow("😿 No new servers found.")
     }
-    save_config(&config)?;
-    green(format!("😺 Servers Imported."));
+
     Ok(())
 }
 
@@ -68,7 +92,7 @@ pub(crate) fn list_servers() -> anyhow::Result<()> {
     let config = load_config()?;
 
     if config.servers.is_empty() {
-        yellow("😿 No servers found");
+        yellow("😿 No servers found.");
     } else {
         let table = Table::new(&config.servers)
             .with(Style::modern_rounded())
@@ -90,8 +114,9 @@ pub(crate) fn remove_server(servers: Vec<String>) -> anyhow::Result<()> {
     } else {
         let mut servers_removed = vec![];
         for name in servers.clone() {
-            if !config.servers.iter().any(|s| s.name == name) {
-                yellow(format!("😿 No server <{}> found", &name));
+            // if !config.servers.iter().any(|s| s.name == name) {
+            if get_server_from(&config, &name).is_none() {
+                yellow(format!("😿 No server <{}> found.", &name));
             } else {
                 servers_removed.push(name);
             }
@@ -110,13 +135,8 @@ pub(crate) fn remove_server(servers: Vec<String>) -> anyhow::Result<()> {
     };
 
     if yesno_select_prompt(label)? {
-        let mut server_removed = vec![];
-        for server in servers {
-            if let Some(index) = config.servers.iter().position(|s| s.name == server) {
-                config.servers.remove(index);
-                server_removed.push(server);
-            };
-        }
+        let server_removed = servers.clone();
+        config.servers.retain(|s| !servers.contains(&s.name));
         save_config(&config)?;
         green(format!("😺 Server {} removed.", server_removed.join(", ")));
     }
@@ -142,7 +162,7 @@ pub(crate) fn add_server() -> anyhow::Result<()> {
 pub(crate) fn edit_server(server: String) -> anyhow::Result<()> {
     let mut config = load_config()?;
 
-    let server = match config.servers.iter().find(|s| s.name == server) {
+    let server = match get_server_from(&config, server.as_str()) {
         Some(s) => s.clone(),
         None => {
             if let Some(s) = servers_select_prompt(&config.servers) {
@@ -167,7 +187,7 @@ pub(crate) fn edit_server(server: String) -> anyhow::Result<()> {
 pub(crate) fn rename_server(server: String) -> anyhow::Result<()> {
     let mut config = load_config()?;
 
-    let server = match config.servers.iter().find(|s| s.name == server) {
+    let server = match get_server_from(&config, server.as_str()) {
         Some(s) => s.clone(),
         None => {
             if let Some(s) = servers_select_prompt(&config.servers) {
@@ -199,7 +219,7 @@ pub(crate) fn rename_server(server: String) -> anyhow::Result<()> {
 pub(crate) async fn connect_server(server: String) -> anyhow::Result<()> {
     let mut config = load_config()?;
 
-    let server = match config.servers.iter().find(|s| s.name == server) {
+    let server = match get_server_from(&config, server.as_str()) {
         Some(s) => s.clone(),
         None => {
             if let Some(s) = servers_select_prompt(&config.servers) {
@@ -212,7 +232,7 @@ pub(crate) async fn connect_server(server: String) -> anyhow::Result<()> {
 
     // If the server is not marked as current, mark it as current,
     // and unmark all others.
-    if server.current.is_none_or(|c| !c) {
+    if !server.current.unwrap_or(false) {
         for s in &mut config.servers {
             if s.name == server.name {
                 s.current = Some(true);

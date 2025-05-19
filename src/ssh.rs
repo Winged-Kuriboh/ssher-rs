@@ -55,10 +55,8 @@ impl RawModeGuard {
 
 impl Drop for RawModeGuard {
     fn drop(&mut self) {
-        if self.enabled {
-            if disable_raw_mode().is_err() {
-                red("Failed to disable raw mode.");
-            }
+        if self.enabled && disable_raw_mode().is_err() {
+            red("Failed to disable raw mode.");
         }
     }
 }
