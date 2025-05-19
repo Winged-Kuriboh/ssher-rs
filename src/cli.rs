@@ -2,7 +2,7 @@
 use crate::{
     cmd::{
         add_server, connect_server, edit_server, list_servers, remove_server, rename_server,
-        version,
+        version,import_servers,
     },
     common::{print_completions, server_completer, servers_len},
 };
@@ -85,6 +85,13 @@ enum SubCommands {
         disable_help_flag = true
     )]
     Rename(ServerArgs),
+    #[command(
+        name = "import",
+        about = "Import servers from ~/.ssh/config",
+        allow_missing_positional = true,
+        disable_help_flag = true
+    )]
+    Import,
 }
 
 #[derive(Debug, Args)]
@@ -153,6 +160,9 @@ impl Cli {
             Some(SubCommands::Rename(server)) => {
                 let server = server.name.clone().unwrap_or_default();
                 rename_server(server)?;
+            }
+            Some(SubCommands::Import) => {
+               import_servers()?;
             }
             None => {
                 let server = self.server.clone().unwrap_or_default();

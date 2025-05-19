@@ -20,3 +20,5 @@ pub(crate) fn save_config(config: &Config) -> anyhow::Result<()> {
         .map_err(|e| anyhow::anyhow!("Failed to serialize config: {}", e))?;
     fs::write(path, content).map_err(|e| anyhow::anyhow!("Failed to save config: {}", e))
 }
+
+
