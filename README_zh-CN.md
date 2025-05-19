@@ -72,14 +72,22 @@ ssher edit
 ssher edit <server>
 ```
 
-7. 查看版本
+7. 从 SSH 配置文件导入
+
+```bash
+ssher import
+
+ssher import -c <ssh_config_file>
+```
+
+8. 查看版本
 
 ```bash
 # version, v
 ssher v
 ```
 
-8. 查看帮助
+9. 查看帮助
 
 ```bash
 ssher help
@@ -94,7 +102,7 @@ source <(COMPLETE=bash ssher)
 
 # zsh
 source <(ssher completion zsh)
-source <(COMPLETE=bash zsh)
+source <(COMPLETE=zsh ssher)
 
 # fish
 ssher completion fish | source
@@ -112,27 +120,3 @@ ssher | Out-String | Invoke-Expression
 ## 配置
 
 配置文件保存在 `~/.ssher.yaml` 文件中。
-
-## 故障排除
-
-1. MacOS 默认的 bash 版本过低，当使用补全功能 `source <(COMPLETE=bash ssher)` 时，可能会出现以下错误：
-
-```bash
-$ source <(COMPLETE=bash ssher)
-error: Broken pipe (os error 32)
-```
-
-解决方案:
-
-- 使用如下命令升级 bash：
-
-```bash
-brew install bash
-```
-
-- 先生成补全文件，然后再加载：
-
-```bash
-COMPLETE=bash ssher > .ssher_bash_completion.sh
-source .ssher_bash_completion.sh
-```

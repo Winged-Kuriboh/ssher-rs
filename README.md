@@ -72,14 +72,22 @@ ssher edit
 ssher edit <server>
 ```
 
-7. Check version
+7. Import servers from ssh config file
+
+```bash
+ssher import
+
+ssher import -c <ssh_config_file>
+```
+
+8. Check version
 
 ```bash
 # version, v
 ssher v
 ```
 
-8. Help
+9. Help
 
 ```bash
 ssher help
@@ -94,7 +102,7 @@ source <(COMPLETE=bash ssher)
 
 # zsh
 source <(ssher completion zsh)
-source <(COMPLETE=bash zsh)
+source <(COMPLETE=zsh ssher)
 
 # fish
 ssher completion fish | source
@@ -112,27 +120,3 @@ ssher | Out-String | Invoke-Expression
 ## Configuration
 
 The configuration file is saved in the `~/.ssher.yaml` file.
-
-## Troubleshooting
-
-1. MacOS default bash version is too low, you may occur the following error when using completions `source <(COMPLETE=bash ssher)`:
-
-```bash
-$ source <(COMPLETE=bash ssher)
-error: Broken pipe (os error 32)
-```
-
-Solutions:
-
-- Use the following command to upgrade bash:
-
-```bash
-brew install bash
-```
-
-- Generate completions to a file and source it:
-
-```bash
-COMPLETE=bash ssher > .ssher_bash_completion.sh
-source .ssher_bash_completion.sh
-```
