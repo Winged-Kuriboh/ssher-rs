@@ -1,6 +1,6 @@
 [package]
 name = "ssher"
-version = "0.5.1"
+version = "0.5.2"
 edition = "2024"
 authors = ["Pone Ding <poneding@gmail.com>"]
 description = "ssher is an easy-to-use command line tool for connecting to remote servers."
