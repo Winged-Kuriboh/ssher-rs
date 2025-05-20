@@ -194,6 +194,7 @@ pub(crate) fn yesno_select_prompt(prompt: &str) -> anyhow::Result<bool> {
 pub(crate) fn rename_server_prompt(config: &Config, server: &Server) -> anyhow::Result<String> {
     let res = Input::with_theme(&default_theme())
         .with_prompt("New name(*):")
+        .with_initial_text(server.name.clone())
         .validate_with(|input: &String| {
             if *input == server.name {
                 yellow("😺 Name not changed.");
