@@ -158,16 +158,7 @@ fn server_form_prompt(server: &Server, config: &Config) -> anyhow::Result<Option
 }
 
 pub(crate) fn add_server_form_prompt(config: &Config) -> anyhow::Result<Option<Server>> {
-    let default_server = Server {
-        name: "".to_string(),
-        host: "".to_string(),
-        port: 22,
-        user: "root".to_string(),
-        password: None,
-        identity_file: Some(String::from("~/.ssh/id_rsa")),
-        current: None,
-    };
-
+    let default_server = Server::new("".to_string());
     server_form_prompt(&default_server, config)
 }
 

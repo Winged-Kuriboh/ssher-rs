@@ -22,6 +22,21 @@ pub(crate) struct Server {
     pub(crate) current: Option<bool>,
 }
 
+impl Server {
+    /// 创建一个新的Config实例
+    pub fn new(host: String) -> Self {
+        Self {
+            host: host.clone(),
+            name: host,
+            port: 22,
+            user: "root".to_string(),
+            password: None,
+            identity_file: "~/.ssh/id_rsa".to_string().into(),
+            current: None,
+        }
+    }
+}
+
 pub(crate) fn display_password(value: &Option<String>) -> String {
     value.as_ref().map_or("", |_| "******").to_string()
 }

@@ -6,11 +6,11 @@ use crate::{
         add_server_form_prompt, edit_server_form_prompt, rename_server_prompt,
         servers_select_prompt, yesno_select_prompt,
     },
-    ssh,
+    ssh, ssh_config,
 };
 use anyhow::Ok;
-use ssh2_config::{ParseRule, SshConfig};
-use std::{fs::File, io::BufReader, vec};
+// use ssh2_config::{ParseRule, SshConfig};
+use std::vec;
 use tabled::{Table, settings::Style};
 
 const VERSION: &str = env!("CARGO_PKG_VERSION");
@@ -24,38 +24,7 @@ fn get_server_from(config: &Config, name: &str) -> Option<Server> {
 }
 
 pub(crate) fn import_servers(config: String) -> anyhow::Result<()> {
-    let mut reader: BufReader<File> = BufReader::new(File::open(config)?);
-    let ssh_config = SshConfig::default().parse(&mut reader, ParseRule::STRICT)?;
-
-    let servers = ssh_config
-        .get_hosts()
-        .iter()
-        .filter_map(|host_entry| {
-            let name = host_entry.pattern.first()?.pattern.clone();
-            if name == *"*" {
-                return None;
-            }
-            let host = host_entry.params.host_name.clone().unwrap_or_default();
-            let port = host_entry.params.port.unwrap_or(22);
-            let user = host_entry.params.user.clone().unwrap_or("root".to_string());
-            let identity_file = host_entry.params.identity_file.clone().map(|paths| {
-                paths
-                    .iter()
-                    .filter_map(|p| p.to_str())
-                    .collect::<Vec<&str>>()
-                    .join(",")
-            });
-            Some(Server {
-                name,
-                host,
-                port,
-                user,
-                password: None,
-                identity_file,
-                current: None,
-            })
-        })
-        .collect::<Vec<Server>>();
+    let servers = ssh_config::parse_ssh_config(config.as_str())?;
 
     if !servers.is_empty() {
         let mut config = load_config()?;
