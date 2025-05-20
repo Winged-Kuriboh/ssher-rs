@@ -22,6 +22,20 @@ pub(crate) struct Server {
     pub(crate) current: Option<bool>,
 }
 
+impl From<sshconfig::HostEntry> for Server {
+    fn from(host: sshconfig::HostEntry) -> Self {
+        Self {
+            name: host.name,
+            host: host.host,
+            port: host.port.unwrap_or(22),
+            user: host.user,
+            password: None,
+            identity_file: host.identity_file,
+            current: None,
+        }
+    }
+}
+
 impl Server {
     /// 创建一个新的Config实例
     pub fn new(host: String) -> Self {

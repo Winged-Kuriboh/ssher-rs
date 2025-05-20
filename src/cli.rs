@@ -23,7 +23,7 @@ use clap_complete::{ArgValueCompleter, CompleteEnv, Shell};
     .literal(AnsiColor::Cyan.on_default())
     .placeholder(AnsiColor::Cyan.on_default())
 )]
-pub(crate) struct Cli {
+pub struct Cli {
     #[command(subcommand)]
     command: Option<SubCommands>,
 
@@ -135,12 +135,12 @@ enum CompletionSubCommands {
 }
 
 impl Cli {
-    pub(crate) fn new() -> Self {
+    pub fn new() -> Self {
         CompleteEnv::with_factory(Cli::command).complete();
         Self::parse()
     }
 
-    pub(crate) async fn run(&self) -> anyhow::Result<()> {
+    pub async fn run(&self) -> anyhow::Result<()> {
         match &self.command {
             Some(SubCommands::Version) => {
                 version();

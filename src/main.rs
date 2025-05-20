@@ -8,7 +8,6 @@ mod endec;
 mod model;
 mod prompt;
 mod ssh;
-mod ssh_config;
 
 #[tokio::main]
 async fn main() -> anyhow::Result<()> {

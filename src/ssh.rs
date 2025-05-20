@@ -1,5 +1,6 @@
+use crate::colord_print::red;
+use crate::endec;
 use crate::model::Server;
-use crate::{endec, red};
 use crossterm::terminal::{disable_raw_mode, enable_raw_mode, is_raw_mode_enabled, size};
 use russh::keys::*;
 use russh::*;
@@ -10,7 +11,7 @@ use tokio::io::{AsyncReadExt, AsyncWriteExt};
 use trust_dns_resolver::AsyncResolver;
 use trust_dns_resolver::config::{ResolverConfig, ResolverOpts};
 
-pub(crate) async fn exec(server: Server) -> anyhow::Result<()> {
+pub async fn exec(server: Server) -> anyhow::Result<()> {
     let mut ssh = Session::connect(server).await?;
 
     ssh.shell().await?;

@@ -6,10 +6,9 @@ use crate::{
         add_server_form_prompt, edit_server_form_prompt, rename_server_prompt,
         servers_select_prompt, yesno_select_prompt,
     },
-    ssh, ssh_config,
+    ssh,
 };
 use anyhow::Ok;
-// use ssh2_config::{ParseRule, SshConfig};
 use std::vec;
 use tabled::{Table, settings::Style};
 
@@ -24,7 +23,7 @@ fn get_server_from(config: &Config, name: &str) -> Option<Server> {
 }
 
 pub(crate) fn import_servers(config: String) -> anyhow::Result<()> {
-    let servers = ssh_config::parse_ssh_config(config.as_str())?;
+    let servers = sshconfig::parse_ssh_config(config.as_str())?;
 
     if !servers.is_empty() {
         let mut config = load_config()?;
@@ -38,7 +37,7 @@ pub(crate) fn import_servers(config: String) -> anyhow::Result<()> {
                 ));
                 continue;
             }
-            config.servers.push(server);
+            config.servers.push(server.into());
             imported += 1;
         }
         if imported > 0 {
